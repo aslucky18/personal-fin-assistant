@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/features/categories/services/category_service.dart';
 import 'package:finanalyzer/features/categories/models/category.dart';
@@ -123,9 +123,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
           constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: AppTheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withAlpha(20), width: 1),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(20),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(40),
@@ -152,16 +155,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     child: _buildTypeButton(
                       'Expense',
                       'expense',
-                      AppTheme.error,
+                      Theme.of(context).colorScheme.error,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildTypeButton(
-                      'Income',
-                      'income',
-                      AppTheme.success,
-                    ),
+                    child: _buildTypeButton('Income', 'income', Colors.green),
                   ),
                 ],
               ),
@@ -186,10 +185,14 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
               const SizedBox(height: 32),
 
               // Color Picker
-              const Text(
+              Text(
                 'Color',
                 style: TextStyle(
-                  color: AppTheme.textSecondary,
+                  color:
+                      Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                      Colors.grey,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -213,7 +216,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                           color: color,
                           shape: BoxShape.circle,
                           border: isSelected
-                              ? Border.all(color: Colors.white, width: 3)
+                              ? Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  width: 3,
+                                )
                               : null,
                         ),
                       ),
@@ -224,10 +232,14 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
               const SizedBox(height: 32),
 
               // Icon Picker
-              const Text(
+              Text(
                 'Icon',
                 style: TextStyle(
-                  color: AppTheme.textSecondary,
+                  color:
+                      Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                      Colors.grey,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -254,13 +266,19 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: isSelected
                             ? Border.all(color: _selectedColor, width: 2)
-                            : Border.all(color: Colors.white.withAlpha(20)),
+                            : Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withAlpha(20),
+                              ),
                       ),
                       child: Icon(
                         icon,
                         color: isSelected
                             ? _selectedColor
-                            : AppTheme.textSecondary,
+                            : Theme.of(context).textTheme.bodyMedium?.color
+                                      ?.withAlpha(180) ??
+                                  Colors.grey,
                       ),
                     ),
                   );
@@ -279,12 +297,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                   ),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('Save Category'),
@@ -306,7 +324,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withAlpha(40) : AppTheme.background,
+          color: isSelected
+              ? color.withAlpha(40)
+              : Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? color : Colors.white.withAlpha(20),
@@ -317,7 +337,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? color : AppTheme.textSecondary,
+              color: isSelected
+                  ? color
+                  : Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),

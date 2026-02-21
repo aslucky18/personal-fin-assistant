@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/features/accounts/services/account_service.dart';
 import 'package:finanalyzer/features/accounts/models/account.dart';
@@ -94,9 +94,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: AppTheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withAlpha(20), width: 1),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(20),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(40),
@@ -109,10 +112,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.account_balance_rounded,
                 size: 64,
-                color: AppTheme.accent,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 24),
               const Text(
@@ -121,9 +124,15 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Add your bank details so you can track records associated with it.',
-                style: TextStyle(color: AppTheme.textSecondary),
+                style: TextStyle(
+                  color:
+                      Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                      Colors.grey,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -160,7 +169,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   labelText: 'Account Type',
                   prefixIcon: Icon(Icons.account_tree_rounded),
                 ),
-                dropdownColor: AppTheme.surface,
+                dropdownColor: Theme.of(context).colorScheme.surface,
                 items: _accountTypes.map((type) {
                   return DropdownMenuItem(value: type, child: Text(type));
                 }).toList(),
@@ -183,12 +192,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   ),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('Save Account'),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/core/utils/icon_color_mapper.dart';
 import 'package:finanalyzer/features/accounts/ui/accounts_list_screen.dart';
@@ -85,6 +85,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _currentIndex == 0
           ? AppBar(
               title: const Text('Dashboard'),
@@ -112,7 +113,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     }
                   },
                   child: CircleAvatar(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     backgroundImage: _userProfile?.avatarUrl != null
                         ? NetworkImage(_userProfile!.avatarUrl!)
                         : null,
@@ -121,8 +122,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             _userProfile?.fullName.isNotEmpty == true
                                 ? _userProfile!.fullName[0].toUpperCase()
                                 : 'A',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           )
@@ -138,9 +139,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
         children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ResponsiveBuilder(
-                  mobile: _buildDashboardContent(context, isDesktop: false),
-                  desktop: _buildDashboardContent(context, isDesktop: true),
+              : Container(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: ResponsiveBuilder(
+                    mobile: _buildDashboardContent(context, isDesktop: false),
+                    desktop: _buildDashboardContent(context, isDesktop: true),
+                  ),
                 ),
           const AccountsListScreen(),
           const CategoriesListScreen(),
@@ -158,11 +162,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   _loadData(); // reload on return
                 }
               },
-              backgroundColor: AppTheme.primary,
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
-              label: const Text(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              icon: Icon(
+                Icons.add_rounded,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+              label: Text(
                 'New Record',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
             )
           : null,
@@ -173,8 +182,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
               onDestinationSelected: (index) {
                 setState(() => _currentIndex = index);
               },
-              backgroundColor: AppTheme.surface,
-              indicatorColor: AppTheme.primaryDark,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              indicatorColor: Theme.of(
+                context,
+              ).colorScheme.primary.withAlpha(50),
               destinations: const [
                 NavigationDestination(
                   icon: Icon(Icons.dashboard_rounded),
@@ -217,9 +228,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
           const SizedBox(height: 8),
           Text(
             'Here is a summary of your finances',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                  Colors.grey,
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -229,28 +244,31 @@ class _HomeDashboardState extends State<HomeDashboard> {
               children: [
                 Expanded(
                   child: _buildSummaryCard(
+                    context,
                     'Total Balance',
                     '\$${_totalBalance.toStringAsFixed(2)}',
                     Icons.account_balance_rounded,
-                    AppTheme.accent,
+                    Theme.of(context).colorScheme.secondary,
                   ),
                 ),
                 const SizedBox(width: 24),
                 Expanded(
                   child: _buildSummaryCard(
+                    context,
                     'Monthly Income',
                     '+\$${_monthlyIncome.toStringAsFixed(2)}',
                     Icons.arrow_upward_rounded,
-                    AppTheme.success,
+                    Colors.green,
                   ),
                 ),
                 const SizedBox(width: 24),
                 Expanded(
                   child: _buildSummaryCard(
+                    context,
                     'Monthly Expense',
                     '-\$${_monthlyExpense.toStringAsFixed(2)}',
                     Icons.arrow_downward_rounded,
-                    AppTheme.error,
+                    Theme.of(context).colorScheme.error,
                   ),
                 ),
               ],
@@ -259,30 +277,33 @@ class _HomeDashboardState extends State<HomeDashboard> {
             Column(
               children: [
                 _buildSummaryCard(
+                  context,
                   'Total Balance',
                   '\$${_totalBalance.toStringAsFixed(2)}',
                   Icons.account_balance_rounded,
-                  AppTheme.accent,
+                  Theme.of(context).colorScheme.secondary,
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
                       child: _buildSummaryCard(
+                        context,
                         'Income',
                         '+\$${_monthlyIncome.toStringAsFixed(0)}',
                         Icons.arrow_upward_rounded,
-                        AppTheme.success,
+                        Colors.green,
                         small: true,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildSummaryCard(
+                        context,
                         'Expense',
                         '-\$${_monthlyExpense.toStringAsFixed(0)}',
                         Icons.arrow_downward_rounded,
-                        AppTheme.error,
+                        Theme.of(context).colorScheme.error,
                         small: true,
                       ),
                     ),
@@ -312,6 +333,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   Widget _buildSummaryCard(
+    BuildContext context,
     String title,
     String amount,
     IconData icon,
@@ -331,7 +353,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 Text(
                   title,
                   style: TextStyle(
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                     fontSize: small ? 14 : 16,
                   ),
                 ),
@@ -351,7 +377,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               style: TextStyle(
                 fontSize: small ? 24 : 32,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 letterSpacing: -1,
               ),
             ),
@@ -366,9 +392,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
       return Container(
         padding: const EdgeInsets.all(32),
         alignment: Alignment.center,
-        child: const Text(
+        child: Text(
           'No records found',
-          style: TextStyle(color: AppTheme.textSecondary),
+          style: TextStyle(
+            color:
+                Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                Colors.grey,
+          ),
         ),
       );
     }
@@ -384,7 +414,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
         final color = category != null
             ? IconColorMapper.hexToColor(category.colour)
-            : AppTheme.accent;
+            : Theme.of(context).colorScheme.secondary;
         final icon = category != null
             ? IconColorMapper.stringToIcon(category.icon)
             : Icons.category_rounded;
@@ -399,7 +429,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             borderRadius: BorderRadius.circular(16),
             side: BorderSide.none,
           ),
-          color: AppTheme.surface.withAlpha(150),
+          color: Theme.of(context).colorScheme.surface,
           elevation: 0,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -416,15 +446,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
             ),
             title: Text(
               tx.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
               ),
             ),
             subtitle: Text(
               category?.name ?? 'Unknown',
-              style: const TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(
+                color:
+                    Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                    Colors.grey,
+              ),
             ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -435,12 +471,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: isExpense ? AppTheme.textPrimary : AppTheme.success,
+                    color: isExpense
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Colors.green,
                   ),
                 ),
                 Text(
                   '${tx.timestamp.day}/${tx.timestamp.month}/${tx.timestamp.year}',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  style: TextStyle(
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

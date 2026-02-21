@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/features/categories/ui/add_category_screen.dart';
 import 'package:finanalyzer/features/categories/services/category_service.dart';
 import 'package:finanalyzer/features/categories/models/category.dart';
@@ -87,10 +87,12 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withAlpha(10),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withAlpha(10),
                       width: 1,
                     ),
                   ),
@@ -117,9 +119,9 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                             const SizedBox(height: 16),
                             Text(
                               cat.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -131,8 +133,13 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isIncome
-                                    ? AppTheme.success
-                                    : AppTheme.textSecondary,
+                                    ? Colors.green
+                                    : Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color
+                                              ?.withAlpha(180) ??
+                                          Colors.grey,
                               ),
                             ),
                           ],
@@ -154,14 +161,20 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
           Icon(
             Icons.category_outlined,
             size: 80,
-            color: AppTheme.textSecondary.withAlpha(100),
+            color:
+                Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(100) ??
+                Colors.grey.withAlpha(100),
           ),
           const SizedBox(height: 16),
           Text(
             'No categories found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondary),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                  Colors.grey,
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(

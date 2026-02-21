@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/features/accounts/ui/add_account_screen.dart';
 import 'package:finanalyzer/features/accounts/services/account_service.dart';
 import 'package:finanalyzer/features/accounts/models/account.dart';
@@ -110,14 +110,20 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
           Icon(
             Icons.account_balance_rounded,
             size: 80,
-            color: AppTheme.textSecondary.withAlpha(100),
+            color:
+                Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(100) ??
+                Colors.grey.withAlpha(100),
           ),
           const SizedBox(height: 16),
           Text(
             'No accounts linked yet',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondary),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                  Colors.grey,
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
