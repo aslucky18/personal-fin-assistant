@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/features/auth/services/auth_service.dart';
 import 'login_screen.dart';
@@ -82,7 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
               height: 350,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.accent.withAlpha(150),
+                color: Theme.of(context).colorScheme.primary.withAlpha(50),
               ),
             ),
           ),
@@ -94,7 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primary.withAlpha(100),
+                color: Theme.of(context).colorScheme.primary.withAlpha(30),
               ),
             ),
           ),
@@ -125,18 +125,21 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: AppTheme.surface.withAlpha(200),
+            color: Theme.of(context).colorScheme.surface.withAlpha(200),
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withAlpha(30), width: 1),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(30),
+              width: 1,
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
+              Icon(
                 Icons.rocket_launch_rounded,
                 size: 60,
-                color: AppTheme.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 24),
               Text(
@@ -147,9 +150,13 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 8),
               Text(
                 'Start mastering your personal finances',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color:
+                      Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                      Colors.grey,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -157,12 +164,18 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
                   labelText: 'Full Name',
                   prefixIcon: Icon(
                     Icons.person_outline,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                 ),
               ),
@@ -171,12 +184,18 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
                   labelText: 'Email Address',
                   prefixIcon: Icon(
                     Icons.email_outlined,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                 ),
               ),
@@ -185,19 +204,29 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.lock_outline,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: AppTheme.textSecondary,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
                     ),
                     onPressed: () {
                       setState(() {
@@ -212,12 +241,12 @@ class _SignupScreenState extends State<SignupScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _signup,
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('Sign Up'),

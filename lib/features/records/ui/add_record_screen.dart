@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/features/records/services/record_service.dart';
 import 'package:finanalyzer/features/records/models/record.dart';
@@ -125,10 +125,10 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primary,
-              surface: AppTheme.surface,
-              onSurface: AppTheme.textPrimary,
+            colorScheme: ColorScheme.dark(
+              primary: Theme.of(context).colorScheme.primary,
+              surface: Theme.of(context).colorScheme.surface,
+              onSurface: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           child: child!,
@@ -170,9 +170,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: AppTheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withAlpha(20), width: 1),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(20),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(40),
@@ -192,16 +195,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                     child: _buildTypeButton(
                       'Expense',
                       'expense',
-                      AppTheme.error,
+                      Theme.of(context).colorScheme.error,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildTypeButton(
-                      'Income',
-                      'income',
-                      AppTheme.success,
-                    ),
+                    child: _buildTypeButton('Income', 'income', Colors.green),
                   ),
                 ],
               ),
@@ -213,22 +212,30 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   hintText: '0.00',
                   hintStyle: TextStyle(
                     fontSize: 48,
-                    color: AppTheme.textSecondary.withAlpha(100),
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(100) ??
+                        Colors.grey.withAlpha(100),
                   ),
                   prefixText: '\$ ',
-                  prefixStyle: const TextStyle(
+                  prefixStyle: TextStyle(
                     fontSize: 48,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -278,21 +285,25 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                     vertical: 20,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.background,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_month_rounded,
-                        color: AppTheme.textSecondary,
+                        color:
+                            Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                            Colors.grey,
                       ),
                       const SizedBox(width: 16),
                       Text(
                         '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: AppTheme.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -311,12 +322,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                   ),
                 ),
                 child: _isSaving
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('Save Record'),
@@ -338,10 +349,14 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withAlpha(40) : AppTheme.background,
+          color: isSelected
+              ? color.withAlpha(40)
+              : Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? color : Colors.white.withAlpha(20),
+            color: isSelected
+                ? color
+                : Theme.of(context).colorScheme.onSurface.withAlpha(20),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -349,7 +364,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? color : AppTheme.textSecondary,
+              color: isSelected
+                  ? color
+                  : Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -367,7 +387,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         prefixIcon: Icon(Icons.category_rounded),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       ),
-      dropdownColor: AppTheme.surface,
+      dropdownColor: Theme.of(context).colorScheme.surface,
       items: _categories
           .map(
             (c) => DropdownMenuItem(
@@ -391,7 +411,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         prefixIcon: Icon(Icons.account_balance_wallet_rounded),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       ),
-      dropdownColor: AppTheme.surface,
+      dropdownColor: Theme.of(context).colorScheme.surface,
       items: _accounts
           .map(
             (a) => DropdownMenuItem(

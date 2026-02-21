@@ -5,6 +5,8 @@ import 'package:finanalyzer/features/auth/ui/login_screen.dart';
 
 import 'package:finanalyzer/features/auth/ui/user_profile_screen.dart';
 import 'package:finanalyzer/features/auth/models/user_profile.dart';
+import 'package:provider/provider.dart';
+import 'package:finanalyzer/core/theme/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -69,7 +71,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         child: CircleAvatar(
                           radius: 40,
-                          backgroundColor: AppTheme.primary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           backgroundImage: _profile?.avatarUrl != null
                               ? NetworkImage(_profile!.avatarUrl!)
                               : null,
@@ -78,9 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   _profile?.fullName.isNotEmpty == true
                                       ? _profile!.fullName[0].toUpperCase()
                                       : 'U',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 32,
-                                    color: Colors.white,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 )
@@ -99,61 +105,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Options
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.color_lens_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   title: const Text('Theme'),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Dark theme is fixed for now!'),
-                      ),
-                    );
+                    _showThemePicker(context);
                   },
                 ),
-                const Divider(color: Colors.white10),
+                const Divider(),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.security_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   title: const Text('Security & Privacy'),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   onTap: () {},
                 ),
-                const Divider(color: Colors.white10),
+                const Divider(),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.help_outline_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   title: const Text('Help & Support'),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
-                    color: AppTheme.textSecondary,
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                        Colors.grey,
                   ),
                   onTap: () {},
                 ),
-                const Divider(color: Colors.white10),
+                const Divider(),
                 const SizedBox(height: 24),
 
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.logout_rounded,
-                    color: AppTheme.error,
+                    color: Theme.of(context).colorScheme.error,
                   ),
-                  title: const Text(
+                  title: Text(
                     'Sign Out',
                     style: TextStyle(
-                      color: AppTheme.error,
+                      color: Theme.of(context).colorScheme.error,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -173,6 +199,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  void _showThemePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final themeProvider = Provider.of<ThemeProvider>(
+          context,
+          listen: false,
+        ); // Use original context provider directly
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Select Theme', style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: AppThemeOption.values.length,
+                  itemBuilder: (context, index) {
+                    final option = AppThemeOption.values[index];
+                    final isSelected = themeProvider.currentTheme == option;
+                    return ListTile(
+                      title: Text(option.name.toUpperCase()),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : null,
+                      onTap: () {
+                        themeProvider.setTheme(option);
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

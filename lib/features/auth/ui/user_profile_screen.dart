@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
+
 import 'package:finanalyzer/core/utils/responsive.dart';
 import 'package:finanalyzer/features/auth/services/auth_service.dart';
 import 'package:finanalyzer/features/auth/models/user_profile.dart';
@@ -131,9 +131,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: AppTheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withAlpha(20), width: 1),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(20),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(40),
@@ -151,7 +154,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundColor: AppTheme.background,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).scaffoldBackgroundColor,
                       backgroundImage: _selectedImageBytes != null
                           ? MemoryImage(_selectedImageBytes!)
                           : (widget.profile.avatarUrl != null
@@ -165,10 +170,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               widget.profile.fullName.isNotEmpty
                                   ? widget.profile.fullName[0].toUpperCase()
                                   : 'U',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 48,
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             )
                           : null,
@@ -181,17 +186,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppTheme.surface,
+                              color: Theme.of(context).colorScheme.surface,
                               width: 3,
                             ),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt_rounded,
                             size: 20,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -221,12 +226,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('Save Changes'),
