@@ -1,0 +1,121 @@
+# FinAnalyzer Feature Implementation – Walkthrough
+
+All features from the original request have been implemented and verified with `flutter analyze` → **No errors**.
+
+---
+
+## ✅ What was completed
+
+### 1. Onboarding Enhancements
+
+| Feature | File |
+|---|---|
+| Hide "Skip" on last intro screen | [onboarding_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/onboarding/ui/onboarding_screen.dart) |
+| Profile picture upload during setup | [setup_profile_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/ui/setup_profile_screen.dart) |
+| Sliding Edit/Delete per category (Slidable) | [setup_categories_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/categories/ui/setup_categories_screen.dart) |
+
+**Categories in onboarding** changed from `FilterChip`/`Wrap` chips → scrollable `ListView` with `Slidable` rows:
+- Swipe left to reveal **Edit** (blue) and **Delete** (red) action buttons
+- Each row shows icon, name, checkbox, and sub-category if applicable
+
+---
+
+### 2. Bank Account Enhancements
+
+**File:** [add_account_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/accounts/ui/add_account_screen.dart)
+
+- **Account types** restricted to: `Savings`, `Salary`, [Current](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart#38-50), `Credit card`
+- **Last 4 digits** enforced to exactly 4 numeric digits using `FilteringTextInputFormatter` + `LengthLimitingTextInputFormatter`
+- **Dynamic bank theming**: typing the bank name auto-updates the card preview color and icon:
+
+````carousel
+**Banks with known branding:**
+- HDFC → Deep Blue `#004C8F`
+- ICICI → Orange-Red `#E85012`
+- SBI → Dark Navy `#1A237E`
+- Axis Bank → Maroon `#97144D`
+- Chase → Blue `#117ACA`
+- Citi, HSBC, Barclays, Amex, Discover, IndusInd, and more...
+<!-- slide -->
+**Visual card preview** animates instantly as you type the bank name, showing:
+- Bank name + brand icon
+- Last 4 digits placeholder (`•••• 1234`)
+- Account type chip
+- Gradient card in brand color with glow shadow
+````
+
+---
+
+### 3. Categories List (Main App)
+
+**File:** [categories_list_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/categories/ui/categories_list_screen.dart)
+
+Redesigned from a flat `GridView` to a nested `ExpansionTile` structure:
+
+```
+Fixed  (indigo header)
+├── Income  ▶  [count badge] [+]
+│   └── salary, bonus, ...  (swipe to edit/delete)
+└── Expense ▶  [count badge] [+]
+    └── rent, groceries, ...
+
+Variable (amber header)
+├── Income  ▶  ...
+└── Expense ▶  ...
+```
+
+- Each row uses `Slidable` — swipe left for **Edit** and **Delete**
+- `+` button on each group header opens [AddCategoryScreen](file:///c:/Users/aslucky18/finanalyzer/lib/features/categories/ui/add_category_screen.dart#8-16) pre-typed to that group
+- Empty groups show an italic hint instead of nothing
+
+---
+
+### 4. Dashboard – SpeedDial FAB
+
+**File:** [home_dashboard.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/records/ui/home_dashboard.dart)
+
+Replaced the basic `FloatingActionButton.extended` with a [SpeedDial](file:///c:/Users/aslucky18/finanalyzer/lib/features/records/ui/home_dashboard.dart#706-774) from `flutter_speed_dial`:
+
+| Button | Color | Action |
+|---|---|---|
+| **Record** (largest) | Primary (theme) | → Add Record screen |
+| **Debt** | Red `#EF4444` | → Liabilities List |
+| **Goal** | Green `#22C55E` | → Goals List |
+
+The `+` icon rotates to `×` when expanded, with a dark overlay behind the buttons.
+
+---
+
+### 5. Settings – Delete Account
+
+**File:** [settings_screen.dart](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/ui/settings_screen.dart)
+
+- New **"Delete Account"** `ListTile` below "Sign Out" (red text, trash icon)
+- Shows a confirmation dialog: *"This will permanently delete your account and all associated data. This action cannot be undone."*
+- On confirm: calls `authService.deleteUserAccount()` → deletes profile row → calls Supabase admin delete → redirects to Login screen
+
+**AuthService** now has [deleteUserAccount()](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart):
+```dart
+Future<void> deleteUserAccount() async {
+  await _supabase.from('user_profiles').delete().eq('id', user.id);
+  await _supabase.auth.admin.deleteUser(user.id);
+}
+```
+
+---
+
+## 🧪 Verification
+
+```
+flutter analyze → No errors ✅
+```
+
+All lint errors fixed:
+- ✅ [uploadAvatarBytes](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart#98-115) → renamed to [uploadProfilePicture](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart#98-112) everywhere
+- ✅ `_selectedImageExtension` unused field removed
+- ✅ `preselectedType` parameter added to [AddCategoryScreen](file:///c:/Users/aslucky18/finanalyzer/lib/features/categories/ui/add_category_screen.dart#8-16)
+- ✅ `DropdownButtonFormField.value` deprecated → `initialValue`
+- ✅ [SetupCategoriesScreen](file:///c:/Users/aslucky18/finanalyzer/lib/features/categories/ui/setup_categories_screen.dart#7-13) now uses `Column + Slidable` instead of `Wrap + FilterChip`
+
+> [!NOTE]
+> The [deleteUserAccount](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart#117-127) method calls `_supabase.auth.admin.deleteUser()`. This requires your Supabase project to have the service role key set up on your backend, or you may want to use a Supabase Edge Function that performs this with the service role. Alternatively, call [signOut](file:///c:/Users/aslucky18/finanalyzer/lib/features/auth/services/auth_service.dart#33-36) and a Supabase database trigger/cascade can delete all user data.

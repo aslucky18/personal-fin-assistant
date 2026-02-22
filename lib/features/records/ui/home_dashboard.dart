@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/icon_color_mapper.dart';
@@ -195,11 +196,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
         children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Container(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: ResponsiveBuilder(
-                    mobile: _buildDashboardContent(context, isDesktop: false),
-                    desktop: _buildDashboardContent(context, isDesktop: true),
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: Container(
+                    color: Theme.of(context).colorScheme.surface,
+                    child: ResponsiveBuilder(
+                      mobile: _buildDashboardContent(context, isDesktop: false),
+                      desktop: _buildDashboardContent(context, isDesktop: true),
+                    ),
                   ),
                 ),
           const AccountsListScreen(),
@@ -207,30 +211,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           const SettingsScreen(),
         ],
       ),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddRecordScreen()),
-                );
-                if (result == true) {
-                  _loadData(); // reload on return
-                }
-              },
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              icon: Icon(
-                Icons.add_rounded,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-              label: Text(
-                'New Record',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            )
-          : null,
+      floatingActionButton: _currentIndex == 0 ? _buildSpeedDial() : null,
       bottomNavigationBar: ResponsiveBuilder.isDesktop(context)
           ? null
           : NavigationBar(
@@ -722,6 +703,75 @@ class _HomeDashboardState extends State<HomeDashboard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSpeedDial() {
+    return SpeedDial(
+      icon: Icons.add_rounded,
+      activeIcon: Icons.close_rounded,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      overlayColor: Colors.black,
+      overlayOpacity: 0.3,
+      spacing: 12,
+      spaceBetweenChildren: 8,
+      children: [
+        SpeedDialChild(
+          child: const Icon(Icons.flag_outlined),
+          backgroundColor: const Color(0xFF22C55E),
+          foregroundColor: Colors.white,
+          label: 'Goal',
+          labelBackgroundColor: const Color(0xFF22C55E),
+          labelStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GoalsListScreen()),
+            );
+            if (result == true) _loadData();
+          },
+        ),
+        SpeedDialChild(
+          child: const Icon(Icons.account_balance_outlined),
+          backgroundColor: Color(0xFFEF4444),
+          foregroundColor: Colors.white,
+          label: 'Debt',
+          labelBackgroundColor: Color(0xFFEF4444),
+          labelStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LiabilitiesListScreen()),
+            );
+            if (result == true) _loadData();
+          },
+        ),
+        SpeedDialChild(
+          child: const Icon(Icons.receipt_long_rounded),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          label: 'Record',
+          labelBackgroundColor: Theme.of(context).colorScheme.primary,
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddRecordScreen()),
+            );
+            if (result == true) _loadData();
+          },
+        ),
+      ],
     );
   }
 }

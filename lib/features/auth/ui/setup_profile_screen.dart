@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../models/user_profile.dart';
 import '../../categories/ui/setup_categories_screen.dart';
@@ -22,6 +24,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
   String? _selectedGender;
   DateTime? _selectedDob;
+  Uint8List? _selectedImageBytes;
 
   final _authService = AuthService();
   bool _isLoading = false;
@@ -66,9 +69,36 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      if (mounted) {
+        setState(() {
+          _selectedImageBytes = bytes;
+        });
+      }
+    }
+  }
+
   Future<void> _saveAndNext() async {
     setState(() => _isLoading = true);
     try {
+      String? avatarUrl;
+      if (_selectedImageBytes != null) {
+        avatarUrl = await _authService.uploadProfilePicture(
+          _selectedImageBytes!,
+          widget.profile.id,
+        );
+      } else {
+        avatarUrl = widget.profile.avatarUrl;
+      }
+
       await _authService.updateProfile(
         fullName: _nameController.text.trim(),
         gender: _selectedGender,
@@ -79,6 +109,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
         fixedAllowances: double.tryParse(_allowancesController.text) ?? 0,
         salaryCreditDate: int.tryParse(_creditDateController.text),
         professionType: 'White Collar', // Default to avoid breaking backend
+        avatarUrl: avatarUrl,
       );
 
       if (mounted) {
@@ -131,6 +162,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
               'This helps us tailor categories specific to your lifestyle.',
               style: TextStyle(color: Colors.grey),
             ),
+            const SizedBox(height: 32),
+            _buildProfilePicSection(),
             const SizedBox(height: 32),
             _buildPersonalSection(),
             const SizedBox(height: 24),
@@ -269,6 +302,48 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfilePicSection() {
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            backgroundImage: _selectedImageBytes != null
+                ? MemoryImage(_selectedImageBytes!)
+                : (widget.profile.avatarUrl != null
+                      ? NetworkImage(widget.profile.avatarUrl!) as ImageProvider
+                      : null),
+            child:
+                _selectedImageBytes == null && widget.profile.avatarUrl == null
+                ? Icon(
+                    Icons.person_outline_rounded,
+                    size: 50,
+                    color: Theme.of(context).colorScheme.primary,
+                  )
+                : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -31,7 +31,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   bool _isLoading = false;
   Uint8List? _selectedImageBytes;
-  String? _selectedImageExtension;
   int _selectedSegment = 0; // 0 for Personal, 1 for Professional
 
   @override
@@ -81,10 +80,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       if (image != null) {
         final bytes = await image.readAsBytes();
-        final ext = image.name.split('.').last;
         setState(() {
           _selectedImageBytes = bytes;
-          _selectedImageExtension = ext.isNotEmpty ? ext : 'jpg';
         });
       }
     } catch (e) {
@@ -93,6 +90,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
+    }
+  }
+
+  Future<void> _reloadProfile() async {
+    final updated = await AuthService().getCurrentUserProfile();
+    if (mounted && updated != null) {
+      setState(() {
+        // Refresh name field if it hasn't been edited
+        if (_nameController.text == (widget.profile.fullName ?? '')) {
+          _nameController.text = updated.fullName ?? '';
+        }
+      });
     }
   }
 
@@ -110,10 +119,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       String? avatarUrl;
 
-      if (_selectedImageBytes != null && _selectedImageExtension != null) {
-        avatarUrl = await _authService.uploadAvatarBytes(
+      if (_selectedImageBytes != null) {
+        avatarUrl = await _authService.uploadProfilePicture(
           _selectedImageBytes!,
-          _selectedImageExtension!,
+          widget.profile.id,
         );
       }
 
@@ -169,42 +178,46 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildForm(BuildContext context, {required bool isDesktop}) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 64 : 24,
-          vertical: 24,
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildProfileHeader(),
-              const SizedBox(height: 32),
-              _buildSegmentedControl(),
-              const SizedBox(height: 32),
-              _selectedSegment == 0
-                  ? _buildPersonalFields()
-                  : _buildProfessionalFields(),
-              const SizedBox(height: 48),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+    return RefreshIndicator(
+      onRefresh: _reloadProfile,
+      child: Center(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 64 : 24,
+            vertical: 24,
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildProfileHeader(),
+                const SizedBox(height: 32),
+                _buildSegmentedControl(),
+                const SizedBox(height: 32),
+                _selectedSegment == 0
+                    ? _buildPersonalFields()
+                    : _buildProfessionalFields(),
+                const SizedBox(height: 48),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save Changes'),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save Changes'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

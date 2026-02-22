@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'add_account_screen.dart';
 import '../services/account_service.dart';
 import '../models/account.dart';
+import '../../../core/utils/bank_branding.dart';
 
 class AccountsListScreen extends StatefulWidget {
   const AccountsListScreen({super.key});
@@ -78,20 +79,6 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     }
   }
 
-  List<Color> _getAccountColors(String type) {
-    switch (type) {
-      case 'Savings':
-        return [const Color(0xFF0EA5E9), const Color(0xFF0284C7)];
-      case 'Salary':
-        return [const Color(0xFF6366F1), const Color(0xFF4F46E5)];
-      case 'CreditCard':
-        return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
-      case 'Current':
-      default:
-        return [const Color(0xFF10B981), const Color(0xFF059669)];
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,35 +86,39 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         title: const Text('My Accounts'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddAccountScreen()),
-              );
-              if (result == true) {
-                _loadAccounts();
-              }
-            },
-          ),
-          const SizedBox(width: 16),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'accounts_fab',
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddAccountScreen()),
+          );
+          if (result == true) {
+            _loadAccounts();
+          }
+        },
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Account'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _accounts.isEmpty
           ? _buildEmptyState()
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              itemCount: _accounts.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final acc = _accounts[index];
-                final colors = _getAccountColors(acc.type);
-                return _buildAccountCard(context, acc: acc, colors: colors);
-              },
+          : RefreshIndicator(
+              onRefresh: _loadAccounts,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
+                itemCount: _accounts.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final acc = _accounts[index];
+                  return _buildAccountCard(context, acc: acc);
+                },
+              ),
             ),
     );
   }
@@ -174,11 +165,15 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     );
   }
 
-  Widget _buildAccountCard(
-    BuildContext context, {
-    required Account acc,
-    required List<Color> colors,
-  }) {
+  Widget _buildAccountCard(BuildContext context, {required Account acc}) {
+    // Use bank-name-based branding for color, but type-based icon
+    final colors = BankBranding.gradientFor(acc.bankName);
+    // Credit card type gets credit card icon; all other types get bank icon
+    final brandIcon = acc.type == 'CreditCard'
+        ? Icons.credit_card_rounded
+        : Icons.account_balance_rounded;
+    final displayType = BankBranding.fromDbType(acc.type);
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -189,7 +184,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: colors.last.withAlpha(60),
+            color: colors.first.withAlpha(80),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -226,11 +221,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const Icon(
-                      Icons.credit_card_rounded,
-                      color: Colors.white70,
-                      size: 28,
-                    ),
+                    Icon(brandIcon, color: Colors.white70, size: 28),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -248,7 +239,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      acc.type.toUpperCase(),
+                      displayType.toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,

@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/responsive.dart';
 import '../services/auth_service.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
+import 'change_password_screen.dart';
 import '../../records/ui/home_dashboard.dart';
 import 'setup_profile_screen.dart';
 
@@ -45,47 +45,99 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await _authService.signIn(email: email, password: password);
-      if (mounted) {
-        final user = Supabase.instance.client.auth.currentUser;
-        if (user != null) {
-          final prefs = await SharedPreferences.getInstance();
-          if (!mounted) return;
 
-          final onboardingCompleted =
-              prefs.getBool('onboarding_completed_${user.id}') ?? false;
+      // Reset failed-attempt counter on success
+      await _authService.recordSuccessfulLogin();
 
-          if (onboardingCompleted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeDashboard()),
-            );
-          } else {
-            final profile = await _authService.getCurrentUserProfile();
-            if (!mounted) return;
+      final profile = await _authService.getCurrentUserProfile();
+      if (!mounted) return;
 
-            if (profile != null) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => SetupProfileScreen(profile: profile),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Could not fetch profile.')),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+      if (profile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${e.toString()}')),
+          const SnackBar(content: Text('Could not fetch profile.')),
+        );
+        return;
+      }
+
+      // Check if account is locked (server-authoritative)
+      final lockedUntil = profile.accountLockedUntil;
+      if (lockedUntil != null && lockedUntil.isAfter(DateTime.now())) {
+        final mins = lockedUntil.difference(DateTime.now()).inMinutes + 1;
+        await _authService.signOut();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Account locked. Try again in $mins minute(s).'),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Temp password: check expiry before routing to ChangePasswordScreen
+      if (profile.mustChangePassword) {
+        final expires = profile.tempPwdExpiresAt;
+        if (expires != null && DateTime.now().isAfter(expires)) {
+          await _authService.signOut();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Temporary password has expired. Please request a new one.',
+                ),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+          return;
+        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        );
+        return;
+      }
+
+      if (profile.completeness > 0) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeDashboard()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => SetupProfileScreen(profile: profile),
+          ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+    } catch (e) {
+      // Record failed attempt and show contextual feedback
+      try {
+        final result = await _authService.recordFailedLogin(email);
+        final locked = result['locked'] as bool? ?? false;
+        final attempts = result['attempts'] as int? ?? 0;
+        if (mounted) {
+          String msg;
+          if (locked) {
+            msg = 'Too many failed attempts. Account locked for 6 hours.';
+          } else {
+            final remaining = (5 - attempts).clamp(0, 5);
+            msg = remaining > 0
+                ? 'Incorrect password. $remaining attempt(s) remaining before lockout.'
+                : 'Login failed.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), duration: const Duration(seconds: 4)),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login failed: ${e.toString()}')),
+          );
+        }
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -237,7 +289,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 0,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Forgot Password?'),
+                ),
+              ),
+              const SizedBox(height: 20),
               // Login Button
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,

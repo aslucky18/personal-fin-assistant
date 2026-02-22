@@ -106,14 +106,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
           ),
-          Positioned(
-            top: 48,
-            right: 24,
-            child: TextButton(
-              onPressed: _completeOnboarding,
-              child: const Text('Skip'),
+          if (_currentPage < _pages.length - 1)
+            Positioned(
+              top: 48,
+              right: 24,
+              child: TextButton(
+                onPressed: _completeOnboarding,
+                child: const Text('Skip'),
+              ),
             ),
-          ),
         ],
       ),
     );

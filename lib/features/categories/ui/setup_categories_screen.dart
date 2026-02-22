@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../services/category_service.dart';
 import '../models/category.dart';
 import '../../onboarding/ui/setup_account_screen.dart';
@@ -429,45 +430,35 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
             final isSelected = selected.contains(index);
             final color = IconColorMapper.hexToColor(suggestion['color']!);
 
-            return IntrinsicWidth(
-              child: GestureDetector(
-                onLongPress: isSelected
-                    ? () => _showDeleteConfirmation(type, index)
-                    : null,
-                child: FilterChip(
-                  label: Text(suggestion['name']!),
-                  selected: isSelected,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        selected.add(index);
-                      } else {
-                        if (selected.length > 1) selected.remove(index);
-                      }
-                    });
-                  },
-                  avatar: Icon(
-                    IconColorMapper.stringToIcon(suggestion['icon']!),
-                    size: 18,
-                    color: isSelected ? color : Colors.grey.shade600,
-                  ),
-                  onDeleted: isSelected
-                      ? () => _showCategoryEditor(type, index: index)
-                      : null,
-                  deleteIcon: const Icon(Icons.edit, size: 14),
-                  deleteButtonTooltipMessage: 'Edit category',
-                  selectedColor: color.withAlpha(40),
-                  checkmarkColor: color,
-                  labelStyle: TextStyle(
-                    color: isSelected ? color : Colors.black87,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Slidable(
+                key: ValueKey('${type}_$index'),
+                endActionPane: ActionPane(
+                  motion: const ScrollMotion(),
+                  children: [
+                    if (isSelected)
+                      SlidableAction(
+                        onPressed: (_) =>
+                            _showCategoryEditor(type, index: index),
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        icon: Icons.edit,
+                        label: 'Edit',
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    if (isSelected)
+                      SlidableAction(
+                        onPressed: (_) => _showDeleteConfirmation(type, index),
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                  ],
+                ),
+                child: ListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
@@ -475,6 +466,58 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
                       width: isSelected ? 2 : 1,
                     ),
                   ),
+                  tileColor: isSelected ? color.withAlpha(20) : null,
+                  leading: CircleAvatar(
+                    backgroundColor: isSelected ? color : Colors.grey.shade200,
+                    foregroundColor: isSelected
+                        ? Colors.white
+                        : Colors.grey.shade600,
+                    child: Icon(
+                      IconColorMapper.stringToIcon(suggestion['icon']!),
+                    ),
+                  ),
+                  title: Text(
+                    suggestion['name']!,
+                    style: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected ? color : Colors.black87,
+                    ),
+                  ),
+                  subtitle:
+                      type == 'fixed_expense' &&
+                          suggestion['sub_category'] != null
+                      ? Text(
+                          suggestion['sub_category']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        )
+                      : null,
+                  trailing: Checkbox(
+                    value: isSelected,
+                    activeColor: color,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          selected.add(index);
+                        } else {
+                          if (selected.length > 1) selected.remove(index);
+                        }
+                      });
+                    },
+                  ),
+                  onTap: () {
+                    setState(() {
+                      if (!isSelected) {
+                        selected.add(index);
+                      } else {
+                        if (selected.length > 1) selected.remove(index);
+                      }
+                    });
+                  },
                 ),
               ),
             );

@@ -7,8 +7,9 @@ import '../../../core/utils/icon_color_mapper.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final Category? category;
+  final String? preselectedType;
 
-  const AddCategoryScreen({super.key, this.category});
+  const AddCategoryScreen({super.key, this.category, this.preselectedType});
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();

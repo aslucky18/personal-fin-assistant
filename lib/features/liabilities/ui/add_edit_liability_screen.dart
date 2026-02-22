@@ -16,11 +16,10 @@ class AddEditLiabilityScreen extends StatefulWidget {
 class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _totalController;
-  late final TextEditingController _paidController;
-  late final TextEditingController _interestController;
-  String _selectedType = 'loan';
-  DateTime? _selectedDate;
+  late final TextEditingController _monthlyPayableController;
+  late final TextEditingController _noOfMonthsController;
+  String _selectedType = 'Loan';
+  DateTime? _startDate;
 
   final _liabilityService = LiabilityService();
   final _categoryService = CategoryService();
@@ -30,23 +29,30 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   String? _selectedCategoryId;
   bool _isLoadingCategories = true;
 
-  final List<String> _types = ['loan', 'credit_card', 'mortgage', 'other'];
+  final List<String> _types = [
+    'Loan',
+    'Mortgage',
+    'Gold Loan',
+    'EMI',
+    'Others',
+  ];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.liability?.name ?? '');
-    _totalController = TextEditingController(
-      text: widget.liability?.totalAmount.toString() ?? '',
+    _monthlyPayableController = TextEditingController(
+      text: widget.liability != null && widget.liability!.monthlyPayable > 0
+          ? widget.liability!.monthlyPayable.toString()
+          : '',
     );
-    _paidController = TextEditingController(
-      text: widget.liability?.paidAmount.toString() ?? '',
+    _noOfMonthsController = TextEditingController(
+      text: widget.liability != null && widget.liability!.noOfMonths > 0
+          ? widget.liability!.noOfMonths.toString()
+          : '',
     );
-    _interestController = TextEditingController(
-      text: widget.liability?.interestRate.toString() ?? '0.0',
-    );
-    _selectedType = widget.liability?.type ?? 'loan';
-    _selectedDate = widget.liability?.dueDate;
+    _selectedType = widget.liability?.type ?? 'Loan';
+    _startDate = widget.liability?.startDate ?? DateTime.now();
     _selectedCategoryId = widget.liability?.categoryId;
     _loadCategories();
   }
@@ -83,9 +89,8 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _totalController.dispose();
-    _paidController.dispose();
-    _interestController.dispose();
+    _monthlyPayableController.dispose();
+    _noOfMonthsController.dispose();
     super.dispose();
   }
 
@@ -94,17 +99,31 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
 
     setState(() => _isSaving = true);
     try {
+      final monthlyPayable =
+          double.tryParse(_monthlyPayableController.text) ?? 0.0;
+      final noOfMonths = int.tryParse(_noOfMonthsController.text) ?? 0;
+      final totalAmount = monthlyPayable * noOfMonths;
+
       final liability = Liability(
         id: widget.liability?.id ?? '',
         userId: widget.liability?.userId ?? '',
         name: _nameController.text.trim(),
-        totalAmount: double.parse(_totalController.text),
-        paidAmount: double.parse(_paidController.text),
-        interestRate: double.parse(_interestController.text),
-        dueDate: _selectedDate,
+        totalAmount: totalAmount,
+        paidAmount: widget.liability?.paidAmount ?? 0.0,
+        interestRate: 0.0,
+        dueDate: _startDate != null
+            ? DateTime(
+                _startDate!.year,
+                _startDate!.month + noOfMonths,
+                _startDate!.day,
+              )
+            : null,
         type: _selectedType,
         createdAt: widget.liability?.createdAt ?? DateTime.now(),
         categoryId: _selectedCategoryId,
+        monthlyPayable: monthlyPayable,
+        noOfMonths: noOfMonths,
+        startDate: _startDate,
       );
 
       if (widget.liability == null) {
@@ -167,13 +186,12 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   Future<void> _pickDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate:
-          _selectedDate ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (date != null) {
-      setState(() => _selectedDate = date);
+      setState(() => _startDate = date);
     }
   }
 
@@ -272,12 +290,12 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
-                      controller: _totalController,
+                      controller: _monthlyPayableController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
                       decoration: const InputDecoration(
-                        labelText: 'Total Debt',
+                        labelText: 'Monthly Payable',
                         prefixText: '\$ ',
                       ),
                       validator: (val) =>
@@ -289,37 +307,18 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
-                      controller: _paidController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                      controller: _noOfMonthsController,
+                      keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Amount Paid',
-                        prefixText: '\$ ',
+                        labelText: 'No. of Months',
                       ),
                       validator: (val) =>
-                          (val == null || double.tryParse(val) == null)
+                          (val == null || int.tryParse(val) == null)
                           ? 'Invalid'
                           : null,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _interestController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Interest Rate',
-                  suffixText: '%',
-                  prefixIcon: Icon(Icons.percent_rounded),
-                ),
-                validator: (val) =>
-                    (val == null || double.tryParse(val) == null)
-                    ? 'Invalid'
-                    : null,
               ),
               const SizedBox(height: 24),
               InkWell(
@@ -347,11 +346,11 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        _selectedDate == null
-                            ? 'Next Due Date (Optional)'
-                            : 'Due Date: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                        _startDate == null
+                            ? 'Start Date'
+                            : 'Start Date: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year}',
                         style: TextStyle(
-                          color: _selectedDate == null
+                          color: _startDate == null
                               ? Theme.of(
                                   context,
                                 ).colorScheme.onSurface.withAlpha(150)
