@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
-import 'package:finanalyzer/core/utils/responsive.dart';
-import 'package:finanalyzer/features/records/services/record_service.dart';
-import 'package:finanalyzer/features/records/models/record.dart';
-import 'package:finanalyzer/features/accounts/services/account_service.dart';
-import 'package:finanalyzer/features/accounts/models/account.dart';
-import 'package:finanalyzer/features/categories/services/category_service.dart';
-import 'package:finanalyzer/features/categories/models/category.dart';
+import '../../../core/utils/responsive.dart';
+import '../services/record_service.dart';
+import '../models/record.dart';
+import '../../accounts/services/account_service.dart';
+import '../../accounts/models/account.dart';
+import '../../categories/services/category_service.dart';
+import '../../categories/models/category.dart';
+import '../../goals/services/goal_service.dart';
+import '../../goals/models/goal.dart';
+import '../../liabilities/services/liability_service.dart';
+import '../../liabilities/models/liability.dart';
 
 class AddRecordScreen extends StatefulWidget {
   const AddRecordScreen({super.key});
@@ -22,12 +26,18 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   final _recordService = RecordService();
   final _accountService = AccountService();
   final _categoryService = CategoryService();
+  final _goalService = GoalService();
+  final _liabilityService = LiabilityService();
 
   List<Account> _accounts = [];
   List<Category> _categories = [];
+  List<FinancialGoal> _goals = [];
+  List<Liability> _liabilities = [];
 
   String? _selectedAccountId;
   String? _selectedCategoryId;
+  String? _selectedGoalId;
+  String? _selectedLiabilityId;
   DateTime _selectedDate = DateTime.now();
   bool _isLoadingData = true;
   bool _isSaving = false;
@@ -42,10 +52,14 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     try {
       final accounts = await _accountService.getAccounts();
       final categories = await _categoryService.getCategories();
+      final goals = await _goalService.getGoals();
+      final liabilities = await _liabilityService.getLiabilities();
       if (mounted) {
         setState(() {
           _accounts = accounts;
           _categories = categories;
+          _goals = goals;
+          _liabilities = liabilities;
           if (_accounts.isNotEmpty) _selectedAccountId = _accounts.first.id;
           if (_categories.isNotEmpty) {
             _selectedCategoryId = _categories.first.id;
@@ -96,6 +110,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         userId: '',
         accountId: _selectedAccountId!,
         categoryId: _selectedCategoryId!,
+        goalId: _selectedGoalId,
+        liabilityId: _selectedLiabilityId,
         name: _titleController.text.trim(),
         amount: amount,
         type: _selectedType == 'expense' ? 'debit' : 'credit',
@@ -262,6 +278,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                   children: [
                     Expanded(child: _buildCategoryDropdown()),
                     const SizedBox(width: 16),
+                    Expanded(child: _buildLinkingDropdown()),
+                    const SizedBox(width: 16),
                     Expanded(child: _buildAccountDropdown()),
                   ],
                 )
@@ -269,6 +287,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 Column(
                   children: [
                     _buildCategoryDropdown(),
+                    const SizedBox(height: 16),
+                    _buildLinkingDropdown(),
                     const SizedBox(height: 24),
                     _buildAccountDropdown(),
                   ],
@@ -379,6 +399,24 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   }
 
   Widget _buildCategoryDropdown() {
+    final filteredCategories = _categories.where((c) {
+      if (_selectedType == 'income') {
+        return c.type == Category.fixedIncome ||
+            c.type == Category.variableIncome;
+      } else {
+        return c.type == Category.fixedExpense ||
+            c.type == Category.variableExpense;
+      }
+    }).toList();
+
+    // Ensure selected category is valid for the current type
+    if (_selectedCategoryId != null &&
+        !filteredCategories.any((c) => c.id == _selectedCategoryId)) {
+      _selectedCategoryId = filteredCategories.isNotEmpty
+          ? filteredCategories.first.id
+          : null;
+    }
+
     return DropdownButtonFormField<String>(
       initialValue: _selectedCategoryId,
       isExpanded: true,
@@ -388,7 +426,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       ),
       dropdownColor: Theme.of(context).colorScheme.surface,
-      items: _categories
+      items: filteredCategories
           .map(
             (c) => DropdownMenuItem(
               value: c.id,
@@ -397,9 +435,96 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           )
           .toList(),
       onChanged: (val) {
-        if (val != null) setState(() => _selectedCategoryId = val);
+        if (val != null) {
+          setState(() {
+            _selectedCategoryId = val;
+            _selectedGoalId = null;
+            _selectedLiabilityId = null;
+          });
+        }
       },
     );
+  }
+
+  Widget _buildLinkingDropdown() {
+    if (_selectedCategoryId == null) return const SizedBox.shrink();
+
+    final category = _categories.firstWhere((c) => c.id == _selectedCategoryId);
+    final nameNormalized = category.name.trim().toLowerCase();
+
+    // Exclude Salary and Housing Rent from linking
+    if (nameNormalized == 'salary' || nameNormalized == 'housing rent') {
+      return const SizedBox.shrink();
+    }
+
+    final matchingGoals = _goals
+        .where((g) => g.categoryId == _selectedCategoryId)
+        .toList();
+    final matchingLiabilities = _liabilities
+        .where((l) => l.categoryId == _selectedCategoryId)
+        .toList();
+
+    if (matchingGoals.isNotEmpty) {
+      return DropdownButtonFormField<String>(
+        initialValue: _selectedGoalId,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Link to Goal',
+          prefixIcon: Icon(Icons.ads_click_rounded),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        ),
+        dropdownColor: Theme.of(context).colorScheme.surface,
+        items: matchingGoals
+            .map(
+              (g) => DropdownMenuItem(
+                value: g.id,
+                child: Text(
+                  g.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (val) {
+          setState(() {
+            _selectedGoalId = val;
+            _selectedLiabilityId = null;
+          });
+        },
+      );
+    } else if (matchingLiabilities.isNotEmpty) {
+      return DropdownButtonFormField<String>(
+        initialValue: _selectedLiabilityId,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Link to Debt/Liability',
+          prefixIcon: Icon(Icons.account_balance_rounded),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        ),
+        dropdownColor: Theme.of(context).colorScheme.surface,
+        items: matchingLiabilities
+            .map(
+              (l) => DropdownMenuItem(
+                value: l.id,
+                child: Text(
+                  l.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (val) {
+          setState(() {
+            _selectedLiabilityId = val;
+            _selectedGoalId = null;
+          });
+        },
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildAccountDropdown() {

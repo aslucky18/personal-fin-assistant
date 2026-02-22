@@ -1,4 +1,9 @@
 class Category {
+  static const String fixedIncome = 'fixed_income';
+  static const String variableIncome = 'variable_income';
+  static const String fixedExpense = 'fixed_expense';
+  static const String variableExpense = 'variable_expense';
+
   final String id;
   final String userId;
   final String name;

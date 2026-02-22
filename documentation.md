@@ -97,7 +97,24 @@ This is where users tell the app about their bank accounts.
    * `AccountsListScreen`: Shows a list of all your bank accounts and their balances.
    * `AddAccountScreen`: A form with text boxes for Bank Name, ending digits, starting balance, and account type (Checking vs Savings).
 
-### 4.3 Categories feature (`lib/features/categories/`)
+### 4.4 Financial Goals (`lib/features/goals/`)
+This helps users save for their dreams and track periodic schemes.
+
+* **Model (`goal.dart`)**: Holds the `name`, `targetAmount`, `currentAmount`, `deadline`, and Chit-specific fields like `isChit`, `monthlyContribution`, and `durationMonths`.
+* **Service (`goal_service.dart`)**: Handles simple CRUD operations for goals in Supabase.
+* **Screens**:
+    * `GoalsListScreen`: Displays all goals with progress bars. Chit schemes are marked with a special badge and show monthly contribution amounts.
+    * `AddEditGoalScreen`: Allows creating or editing goals. Includes a toggle for **Chit Schemes** which auto-calculates targets and deadlines.
+
+### 4.5 Debt Manager (`lib/features/liabilities/`)
+Helps users track their debts and repayments.
+
+* **Model (`liability.dart`)**: Holds the `name`, `totalAmount`, `paidAmount`, and `dueDate`.
+* **Screens**:
+    * `LiabilitiesScreen`: List of all debts with progress tracking.
+    * `AddEditLiabilityScreen`: UI for recording new debts.
+
+### 4.6 Categories feature (`lib/features/categories/`)
 This defines what kind of things the user spends money on.
 
 * **Model (`category.dart`)**: Holds the `name`, `type` (income or expense), `colorHex` (a visual color code), and `iconName` (a visual icon code).

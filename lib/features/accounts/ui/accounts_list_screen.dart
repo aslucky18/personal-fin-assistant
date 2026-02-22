@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:finanalyzer/features/accounts/ui/add_account_screen.dart';
-import 'package:finanalyzer/features/accounts/services/account_service.dart';
-import 'package:finanalyzer/features/accounts/models/account.dart';
+import 'add_account_screen.dart';
+import '../services/account_service.dart';
+import '../models/account.dart';
 
 class AccountsListScreen extends StatefulWidget {
   const AccountsListScreen({super.key});
@@ -39,6 +39,42 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteAccount(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete this account? Any transactions linked to this account might be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _accountService.deleteAccount(id);
+        _loadAccounts();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete account: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -90,13 +126,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
               itemBuilder: (context, index) {
                 final acc = _accounts[index];
                 final colors = _getAccountColors(acc.type);
-                return _buildAccountCard(
-                  context,
-                  bankName: acc.bankName,
-                  type: acc.type,
-                  endsWith: acc.endsWith,
-                  colors: colors,
-                );
+                return _buildAccountCard(context, acc: acc, colors: colors);
               },
             ),
     );
@@ -146,9 +176,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
   Widget _buildAccountCard(
     BuildContext context, {
-    required String bankName,
-    required String type,
-    required String endsWith,
+    required Account acc,
     required List<Color> colors,
   }) {
     return Container(
@@ -171,9 +199,16 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            // View account details / edit
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AddAccountScreen(account: acc)),
+            );
+            if (result == true) {
+              _loadAccounts();
+            }
           },
+          onLongPress: () => _deleteAccount(acc.id),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -183,7 +218,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      bankName,
+                      acc.bankName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -200,7 +235,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  '**** **** **** $endsWith',
+                  '**** **** **** ${acc.endsWith}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -213,7 +248,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      type.toUpperCase(),
+                      acc.type.toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
