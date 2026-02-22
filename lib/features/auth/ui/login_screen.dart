@@ -1,10 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:finanalyzer/core/utils/responsive.dart';
-import 'package:finanalyzer/features/auth/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/responsive.dart';
+import '../services/auth_service.dart';
 import 'signup_screen.dart';
-import 'package:finanalyzer/features/records/ui/home_dashboard.dart';
+import '../../records/ui/home_dashboard.dart';
+import 'setup_profile_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,11 +45,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await _authService.signIn(email: email, password: password);
-      // Navigate to Home Dashboard on success
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeDashboard()),
-        );
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          final prefs = await SharedPreferences.getInstance();
+          if (!mounted) return;
+
+          final onboardingCompleted =
+              prefs.getBool('onboarding_completed_${user.id}') ?? false;
+
+          if (onboardingCompleted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeDashboard()),
+            );
+          } else {
+            final profile = await _authService.getCurrentUserProfile();
+            if (!mounted) return;
+
+            if (profile != null) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => SetupProfileScreen(profile: profile),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not fetch profile.')),
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

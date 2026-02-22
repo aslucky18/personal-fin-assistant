@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:finanalyzer/features/categories/ui/add_category_screen.dart';
-import 'package:finanalyzer/features/categories/services/category_service.dart';
-import 'package:finanalyzer/features/categories/models/category.dart';
-import 'package:finanalyzer/core/utils/icon_color_mapper.dart';
+import 'add_category_screen.dart';
+import '../services/category_service.dart';
+import '../models/category.dart';
+import '../../../core/utils/icon_color_mapper.dart';
 
 class CategoriesListScreen extends StatefulWidget {
   const CategoriesListScreen({super.key});
@@ -40,6 +40,42 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteCategory(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Category'),
+        content: const Text(
+          'Are you sure you want to delete this category? This may affect records linked to it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _categoryService.deleteCategory(id);
+        _loadCategories();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete category: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -83,7 +119,9 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                 final cat = _categories[index];
                 final color = IconColorMapper.hexToColor(cat.colour);
                 final icon = IconColorMapper.stringToIcon(cat.icon);
-                final isIncome = cat.type == 'income';
+                final isIncome =
+                    cat.type == Category.fixedIncome ||
+                    cat.type == Category.variableIncome;
 
                 return Container(
                   decoration: BoxDecoration(
@@ -100,9 +138,18 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(24),
-                      onTap: () {
-                        // Edit category
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddCategoryScreen(category: cat),
+                          ),
+                        );
+                        if (result == true) {
+                          _loadCategories();
+                        }
                       },
+                      onLongPress: () => _deleteCategory(cat.id),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(

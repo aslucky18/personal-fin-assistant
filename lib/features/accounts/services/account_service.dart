@@ -36,4 +36,19 @@ class AccountService {
   Future<void> deleteAccount(String accountId) async {
     await _supabase.from('user_personal_accounts').delete().eq('id', accountId);
   }
+
+  // Update an account (using encrypting RPC)
+  Future<Account> updateAccount(Account account) async {
+    final response = await _supabase.rpc(
+      'update_account',
+      params: {
+        'p_id': account.id,
+        'p_bank_name': account.bankName,
+        'p_type': account.type,
+        'p_ends_with': account.endsWith,
+      },
+    );
+
+    return Account.fromJson(response as Map<String, dynamic>);
+  }
 }

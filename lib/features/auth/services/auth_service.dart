@@ -49,17 +49,49 @@ class AuthService {
   }
 
   // Update profile
-  Future<void> updateProfile({String? fullName, String? avatarUrl}) async {
+  Future<UserProfile> updateProfile({
+    String? fullName,
+    String? avatarUrl,
+    String? gender,
+    DateTime? dateOfBirth,
+    double? professionalSalary,
+    int? salaryCreditDate,
+    double? fixedAllowances,
+    String? jobTitle,
+    String? companyName,
+    String? professionType,
+  }) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) throw Exception('User not authenticated');
 
     final updates = <String, dynamic>{};
     if (fullName != null) updates['full_name'] = fullName;
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
-
-    if (updates.isNotEmpty) {
-      await _supabase.from('user_profiles').update(updates).eq('id', user.id);
+    if (gender != null) updates['gender'] = gender;
+    if (dateOfBirth != null) {
+      updates['date_of_birth'] = dateOfBirth.toIso8601String();
     }
+    if (professionalSalary != null) {
+      updates['professional_salary'] = professionalSalary;
+    }
+    if (salaryCreditDate != null) {
+      updates['salary_credit_date'] = salaryCreditDate;
+    }
+    if (fixedAllowances != null) {
+      updates['fixed_allowances'] = fixedAllowances;
+    }
+    if (jobTitle != null) updates['job_title'] = jobTitle;
+    if (companyName != null) updates['company_name'] = companyName;
+    if (professionType != null) updates['profession_type'] = professionType;
+
+    final response = await _supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+    return UserProfile.fromJson(response);
   }
 
   // Upload Avatar

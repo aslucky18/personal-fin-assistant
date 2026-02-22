@@ -32,6 +32,18 @@ class RecordService {
     return FinancialRecord.fromJson(response);
   }
 
+  // Update a record
+  Future<FinancialRecord> updateRecord(FinancialRecord record) async {
+    final response = await _supabase
+        .from('records')
+        .update(record.toJson())
+        .eq('id', record.id)
+        .select()
+        .single();
+
+    return FinancialRecord.fromJson(response);
+  }
+
   // Delete a record
   Future<void> deleteRecord(String recordId) async {
     await _supabase.from('records').delete().eq('id', recordId);

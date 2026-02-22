@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:finanalyzer/core/theme/app_theme.dart';
-import 'package:finanalyzer/features/auth/services/auth_service.dart';
-import 'package:finanalyzer/features/auth/ui/login_screen.dart';
+import '../../../core/theme/app_theme.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
-import 'package:finanalyzer/features/auth/ui/user_profile_screen.dart';
-import 'package:finanalyzer/features/auth/models/user_profile.dart';
+import 'user_profile_screen.dart';
+import '../models/user_profile.dart';
 import 'package:provider/provider.dart';
-import 'package:finanalyzer/core/theme/theme_provider.dart';
+import '../../../core/theme/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -79,8 +79,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               : null,
                           child: _profile?.avatarUrl == null
                               ? Text(
-                                  _profile?.fullName.isNotEmpty == true
-                                      ? _profile!.fullName[0].toUpperCase()
+                                  _profile?.fullName != null &&
+                                          _profile!.fullName!.isNotEmpty
+                                      ? _profile!.fullName![0].toUpperCase()
                                       : 'U',
                                   style: TextStyle(
                                     fontSize: 32,

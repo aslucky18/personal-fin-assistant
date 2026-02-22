@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import 'package:finanalyzer/core/utils/responsive.dart';
-import 'package:finanalyzer/features/auth/services/auth_service.dart';
+import '../../../core/utils/responsive.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
-import 'package:finanalyzer/features/records/ui/home_dashboard.dart';
+import 'setup_profile_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -49,11 +49,21 @@ class _SignupScreenState extends State<SignupScreen> {
         password: password,
         fullName: name,
       );
-      // Navigate to Home Dashboard on success
+
+      final profile = await _authService.getCurrentUserProfile();
+
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeDashboard()),
-        );
+        if (profile != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => SetupProfileScreen(profile: profile),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not fetch profile.')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

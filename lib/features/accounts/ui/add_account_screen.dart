@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-
-import 'package:finanalyzer/core/utils/responsive.dart';
-import 'package:finanalyzer/features/accounts/services/account_service.dart';
-import 'package:finanalyzer/features/accounts/models/account.dart';
+import '../../../core/utils/responsive.dart';
+import '../services/account_service.dart';
+import '../models/account.dart';
 
 class AddAccountScreen extends StatefulWidget {
-  const AddAccountScreen({super.key});
+  final Account? account;
+
+  const AddAccountScreen({super.key, this.account});
 
   @override
   State<AddAccountScreen> createState() => _AddAccountScreenState();
@@ -24,6 +25,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     'Current',
     'CreditCard',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _bankNameController.text = widget.account?.bankName ?? '';
+    _endsWithController.text = widget.account?.endsWith ?? '';
+    _selectedType = widget.account?.type ?? 'Savings';
+  }
 
   @override
   void dispose() {
@@ -47,15 +56,19 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
     try {
       final account = Account(
-        id: '',
-        userId: '',
+        id: widget.account?.id ?? '',
+        userId: widget.account?.userId ?? '',
         bankName: bankName,
         type: _selectedType,
         endsWith: endsWith,
-        createdAt: DateTime.now(),
+        createdAt: widget.account?.createdAt ?? DateTime.now(),
       );
 
-      await _accountService.addAccount(account);
+      if (widget.account == null) {
+        await _accountService.addAccount(account);
+      } else {
+        await _accountService.updateAccount(account);
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -68,22 +81,76 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    if (widget.account == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete this account? Any transactions linked to this account might be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await _accountService.deleteAccount(widget.account!.id);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.account != null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Account'),
+        title: Text(isEditing ? 'Edit Account' : 'New Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              onPressed: _isLoading ? null : _deleteAccount,
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: ResponsiveBuilder(
-        mobile: _buildForm(context, isDesktop: false),
-        desktop: _buildForm(context, isDesktop: true),
+        mobile: _buildForm(context, isDesktop: false, isEditing: isEditing),
+        desktop: _buildForm(context, isDesktop: true, isEditing: isEditing),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, {required bool isDesktop}) {
+  Widget _buildForm(
+    BuildContext context, {
+    required bool isDesktop,
+    required bool isEditing,
+  }) {
     return Center(
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
@@ -118,9 +185,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Link a new Account',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                isEditing ? 'Update Account' : 'Link a new Account',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -200,7 +270,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
-                    : const Text('Save Account'),
+                    : Text(isEditing ? 'Update Account' : 'Save Account'),
               ),
             ],
           ),

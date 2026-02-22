@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
-import 'package:finanalyzer/core/utils/responsive.dart';
-import 'package:finanalyzer/core/utils/icon_color_mapper.dart';
-import 'package:finanalyzer/features/accounts/ui/accounts_list_screen.dart';
-import 'package:finanalyzer/features/categories/ui/categories_list_screen.dart';
-import 'package:finanalyzer/features/records/ui/add_record_screen.dart';
-import 'package:finanalyzer/features/records/services/record_service.dart';
-import 'package:finanalyzer/features/categories/services/category_service.dart';
-import 'package:finanalyzer/features/records/models/record.dart';
-import 'package:finanalyzer/features/categories/models/category.dart';
-import 'package:finanalyzer/features/auth/ui/settings_screen.dart';
-import 'package:finanalyzer/features/auth/ui/user_profile_screen.dart';
-import 'package:finanalyzer/features/auth/services/auth_service.dart';
-import 'package:finanalyzer/features/auth/models/user_profile.dart';
+import '../../../core/utils/responsive.dart';
+import '../../../core/utils/icon_color_mapper.dart';
+import '../../accounts/ui/accounts_list_screen.dart';
+import '../../categories/ui/categories_list_screen.dart';
+import 'add_record_screen.dart';
+import 'edit_record_screen.dart';
+import '../services/record_service.dart';
+import '../../categories/services/category_service.dart';
+import '../models/record.dart';
+import '../../categories/models/category.dart';
+import '../../auth/ui/settings_screen.dart';
+import '../../auth/ui/user_profile_screen.dart';
+import '../../auth/services/auth_service.dart';
+import '../../auth/models/user_profile.dart';
+import '../../goals/ui/goals_list_screen.dart';
+import '../../goals/services/goal_service.dart';
+import '../../goals/models/goal.dart';
+import '../../liabilities/ui/liabilities_list_screen.dart';
+import '../../liabilities/services/liability_service.dart';
+import '../../liabilities/models/liability.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -26,10 +33,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
   final _recordService = RecordService();
   final _categoryService = CategoryService();
   final _authService = AuthService();
+  final _goalService = GoalService();
+  final _liabilityService = LiabilityService();
 
   List<FinancialRecord> _records = [];
   Map<String, Category> _categoryMap = {};
   UserProfile? _userProfile;
+  List<FinancialGoal> _goals = [];
+  List<Liability> _liabilities = [];
 
   bool _isLoading = true;
   double _totalBalance = 0;
@@ -48,6 +59,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
       final records = await _recordService.getRecords(limit: 50);
       final categoriesList = await _categoryService.getCategories();
       final profile = await _authService.getCurrentUserProfile();
+      final goals = await _goalService.getGoals();
+      final liabilities = await _liabilityService.getLiabilities();
 
       final Map<String, Category> map = {};
       for (var c in categoriesList) {
@@ -56,6 +69,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
       double income = 0;
       double expense = 0;
+      double total = 0;
       final now = DateTime.now();
 
       for (var r in records) {
@@ -63,6 +77,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
           if (r.type == 'credit') income += r.amount;
           if (r.type == 'debit') expense += r.amount;
         }
+
+        if (r.type == 'credit') total += r.amount;
+        if (r.type == 'debit') total -= r.amount;
       }
 
       if (mounted) {
@@ -70,9 +87,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
           _records = records;
           _categoryMap = map;
           _userProfile = profile;
+          _goals = goals;
+          _liabilities = liabilities;
           _monthlyIncome = income;
           _monthlyExpense = expense;
-          _totalBalance = income - expense;
+          _totalBalance = total;
         });
       }
     } catch (e) {
@@ -112,22 +131,59 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       }
                     }
                   },
-                  child: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage: _userProfile?.avatarUrl != null
-                        ? NetworkImage(_userProfile!.avatarUrl!)
-                        : null,
-                    child: _userProfile?.avatarUrl == null
-                        ? Text(
-                            _userProfile?.fullName.isNotEmpty == true
-                                ? _userProfile!.fullName[0].toUpperCase()
-                                : 'A',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 38,
+                            height: 38,
+                            child: CircularProgressIndicator(
+                              value: _userProfile?.completeness ?? 0,
+                              strokeWidth: 2.5,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withAlpha(20),
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          )
-                        : null,
+                          ),
+                          CircleAvatar(
+                            radius: 15,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            backgroundImage: _userProfile?.avatarUrl != null
+                                ? NetworkImage(_userProfile!.avatarUrl!)
+                                : null,
+                            child: _userProfile?.avatarUrl == null
+                                ? Text(
+                                    _userProfile?.fullName != null &&
+                                            _userProfile!.fullName!.isNotEmpty
+                                        ? _userProfile!.fullName![0]
+                                              .toUpperCase()
+                                        : 'U',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${((_userProfile?.completeness ?? 0) * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 24),
@@ -327,6 +383,171 @@ class _HomeDashboardState extends State<HomeDashboard> {
           ),
           const SizedBox(height: 16),
           _buildTransactionList(),
+
+          const SizedBox(height: 48),
+
+          // Goals Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Financial Goals',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              TextButton(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GoalsListScreen()),
+                  );
+                  _loadData();
+                },
+                child: const Text('View All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildGoalsSummary(),
+
+          const SizedBox(height: 48),
+
+          // Debt Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Debt Manager',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              TextButton(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LiabilitiesListScreen(),
+                    ),
+                  );
+                  _loadData();
+                },
+                child: const Text('View All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildDebtSummary(),
+          const SizedBox(height: 100), // extra padding for fab
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalsSummary() {
+    if (_goals.isEmpty) {
+      return _buildEmptySection('No goals set yet', Icons.flag_outlined);
+    }
+
+    final topGoal = _goals.first;
+    final color = Color(int.parse(topGoal.colour.replaceFirst('#', '0xFF')));
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.flag_rounded, color: color),
+                const SizedBox(width: 12),
+                Text(
+                  topGoal.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Text('${(topGoal.percentComplete * 100).toStringAsFixed(0)}%'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: topGoal.percentComplete,
+              backgroundColor: color.withAlpha(50),
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDebtSummary() {
+    if (_liabilities.isEmpty) {
+      return _buildEmptySection('You are debt-free!', Icons.money_off_rounded);
+    }
+
+    final totalDebt = _liabilities.fold<double>(
+      0,
+      (sum, item) => sum + item.remainingAmount,
+    );
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withAlpha(40),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.account_balance_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Total Remaining Debt',
+                  style: TextStyle(fontSize: 12),
+                ),
+                Text(
+                  '\$${totalDebt.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptySection(String message, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(10),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 12),
+          Text(message, style: const TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -436,6 +657,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
               horizontal: 20,
               vertical: 12,
             ),
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => EditRecordScreen(record: tx)),
+              );
+              if (result == true) {
+                _loadData();
+              }
+            },
             leading: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

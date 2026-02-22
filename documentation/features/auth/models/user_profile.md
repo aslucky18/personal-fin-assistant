@@ -1,12 +1,18 @@
 # user_profile.dart
 
 ## What this file does
-Similar to the Account model, this is the "Blueprint" for a user's basic profile details. We need this because Supabase Auth normally only handles emails and passwords, but we want to know the user's name and see their avatar picture.
+This is the "Blueprint" for a user's details, expanding beyond basic auth to include personal and professional information.
 
 ## Key Properties & Functions
 - **`UserProfile (Class)`**: The blueprint containing:
-  - `id`: A unique database string matching their Login ID.
+  - `id`: Unique database string.
   - `fullName`: The user's typed name.
-  - `avatarUrl`: A web link tracking where their uploaded profile picture is currently saved.
-  - `createdAt`: When they signed up.
-- **`fromJson()`**: Packages a user's details downloaded from the `user_profiles` database table into a `UserProfile` object.
+  - `avatarUrl`: Link to their profile picture.
+  - `gender`: Optional personal info.
+  - `dateOfBirth`: Optional personal info.
+  - `professionalSalary`: User's income details.
+  - `fixedAllowances`: Fixed professional benefits.
+  - `salaryCreditDate`: Day of the month they receive payment.
+  - `jobTitle` / `companyName`: Professional identity.
+- **`completeness`**: A getter that calculates how much of the profile is filled (0 to 1).
+- **`fromJson()`**: Converts DB data into a `UserProfile` object.

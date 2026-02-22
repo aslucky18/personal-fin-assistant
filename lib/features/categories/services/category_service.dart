@@ -35,4 +35,16 @@ class CategoryService {
   Future<void> deleteCategory(String categoryId) async {
     await _supabase.from('categories').delete().eq('id', categoryId);
   }
+
+  // Update a category
+  Future<Category> updateCategory(Category category) async {
+    final response = await _supabase
+        .from('categories')
+        .update(category.toJson())
+        .eq('id', category.id)
+        .select()
+        .single();
+
+    return Category.fromJson(response);
+  }
 }
