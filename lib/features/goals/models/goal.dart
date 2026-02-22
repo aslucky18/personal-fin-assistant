@@ -71,6 +71,40 @@ class FinancialGoal {
     };
   }
 
+  FinancialGoal copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    double? targetAmount,
+    double? currentAmount,
+    DateTime? deadline,
+    String? icon,
+    String? colour,
+    DateTime? createdAt,
+    bool? isChit,
+    double? monthlyContribution,
+    int? durationMonths,
+    DateTime? startDate,
+    String? categoryId,
+  }) {
+    return FinancialGoal(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      targetAmount: targetAmount ?? this.targetAmount,
+      currentAmount: currentAmount ?? this.currentAmount,
+      deadline: deadline ?? this.deadline,
+      icon: icon ?? this.icon,
+      colour: colour ?? this.colour,
+      createdAt: createdAt ?? this.createdAt,
+      isChit: isChit ?? this.isChit,
+      monthlyContribution: monthlyContribution ?? this.monthlyContribution,
+      durationMonths: durationMonths ?? this.durationMonths,
+      startDate: startDate ?? this.startDate,
+      categoryId: categoryId ?? this.categoryId,
+    );
+  }
+
   double get percentComplete =>
       targetAmount > 0 ? (currentAmount / targetAmount) : 0;
 }

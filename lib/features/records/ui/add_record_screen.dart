@@ -120,6 +120,17 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       );
 
       await _recordService.addRecord(record);
+
+      if (_selectedGoalId != null) {
+        try {
+          final goal = _goals.firstWhere((g) => g.id == _selectedGoalId);
+          final updatedGoal = goal.copyWith(
+            currentAmount: goal.currentAmount + amount,
+          );
+          await _goalService.updateGoal(updatedGoal);
+        } catch (_) {}
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -490,6 +501,16 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           setState(() {
             _selectedGoalId = val;
             _selectedLiabilityId = null;
+
+            if (val != null) {
+              final goal = _goals.firstWhere((g) => g.id == val);
+              if (goal.monthlyContribution > 0) {
+                _amountController.text =
+                    goal.monthlyContribution == goal.monthlyContribution.toInt()
+                    ? goal.monthlyContribution.toInt().toString()
+                    : goal.monthlyContribution.toString();
+              }
+            }
           });
         },
       );

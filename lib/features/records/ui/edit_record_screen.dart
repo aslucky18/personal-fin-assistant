@@ -129,6 +129,42 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
       );
 
       await _recordService.updateRecord(updatedRecord);
+
+      // Handle goal updates
+      if (widget.record.goalId != _selectedGoalId) {
+        // Goal changed
+        if (widget.record.goalId != null) {
+          try {
+            final oldGoal = _goals.firstWhere(
+              (g) => g.id == widget.record.goalId,
+            );
+            final revertedGoal = oldGoal.copyWith(
+              currentAmount: oldGoal.currentAmount - widget.record.amount,
+            );
+            await _goalService.updateGoal(revertedGoal);
+          } catch (_) {}
+        }
+        if (_selectedGoalId != null) {
+          try {
+            final newGoal = _goals.firstWhere((g) => g.id == _selectedGoalId);
+            final updatedNewGoal = newGoal.copyWith(
+              currentAmount: newGoal.currentAmount + amount,
+            );
+            await _goalService.updateGoal(updatedNewGoal);
+          } catch (_) {}
+        }
+      } else if (_selectedGoalId != null && widget.record.amount != amount) {
+        // Same goal, different amount
+        try {
+          final goal = _goals.firstWhere((g) => g.id == _selectedGoalId);
+          final delta = amount - widget.record.amount;
+          final updatedGoal = goal.copyWith(
+            currentAmount: goal.currentAmount + delta,
+          );
+          await _goalService.updateGoal(updatedGoal);
+        } catch (_) {}
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -169,6 +205,17 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
 
     try {
       await _recordService.deleteRecord(widget.record.id);
+
+      if (widget.record.goalId != null) {
+        try {
+          final goal = _goals.firstWhere((g) => g.id == widget.record.goalId);
+          final updatedGoal = goal.copyWith(
+            currentAmount: goal.currentAmount - widget.record.amount,
+          );
+          await _goalService.updateGoal(updatedGoal);
+        } catch (_) {}
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -503,6 +550,17 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           setState(() {
             _selectedGoalId = val;
             _selectedLiabilityId = null;
+
+            // Only autofill if they changed to a different goal
+            if (val != null && val != widget.record.goalId) {
+              final goal = _goals.firstWhere((g) => g.id == val);
+              if (goal.monthlyContribution > 0) {
+                _amountController.text =
+                    goal.monthlyContribution == goal.monthlyContribution.toInt()
+                    ? goal.monthlyContribution.toInt().toString()
+                    : goal.monthlyContribution.toString();
+              }
+            }
           });
         },
       );

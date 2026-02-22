@@ -62,8 +62,7 @@ class _AddEditGoalScreenState extends State<AddEditGoalScreen> {
           _categories = categories
               .where(
                 (c) =>
-                    (c.type == Category.fixedIncome ||
-                        c.type == Category.fixedExpense) &&
+                    c.type == Category.fixedExpense &&
                     c.name.trim().toLowerCase() != 'salary' &&
                     c.name.trim().toLowerCase() != 'housing rent',
               )

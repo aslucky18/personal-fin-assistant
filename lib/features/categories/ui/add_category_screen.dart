@@ -22,6 +22,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   String _selectedClass = 'expense';
   Color _selectedColor = const Color(0xFFFF6B35);
   IconData _selectedIcon = Icons.category_rounded;
+  String _selectedFixedExpenseSubCategory = 'General';
   bool _isLoading = false;
 
   final List<Color> _colorOptions = [
@@ -68,6 +69,19 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
       }
       _selectedColor = IconColorMapper.hexToColor(widget.category!.colour);
       _selectedIcon = IconColorMapper.stringToIcon(widget.category!.icon);
+      if (widget.category!.type == 'fixed_expense' &&
+          widget.category!.subCategory != null) {
+        // Fallback to General if we somehow got an invalid classification saved previously
+        final validClassifications = [
+          'General',
+          'Goal Related',
+          'Debt Related',
+        ];
+        _selectedFixedExpenseSubCategory =
+            validClassifications.contains(widget.category!.subCategory!)
+            ? widget.category!.subCategory!
+            : 'General';
+      }
     }
   }
 
@@ -95,9 +109,11 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
         userId: widget.category?.userId ?? '',
         name: name,
         type: '${_selectedNature}_$_selectedClass',
-        subCategory: _subCategoryController.text.trim().isEmpty
-            ? null
-            : _subCategoryController.text.trim(),
+        subCategory: (_selectedNature == 'fixed' && _selectedClass == 'expense')
+            ? _selectedFixedExpenseSubCategory
+            : (_subCategoryController.text.trim().isEmpty
+                  ? null
+                  : _subCategoryController.text.trim()),
         icon: IconColorMapper.iconToString(_selectedIcon),
         colour: IconColorMapper.colorToHex(_selectedColor),
         createdAt: widget.category?.createdAt ?? DateTime.now(),
@@ -294,13 +310,29 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _subCategoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Sub Category (Optional)',
-                  hintText: 'e.g. Shopping',
+              if (_selectedNature == 'fixed' && _selectedClass == 'expense')
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedFixedExpenseSubCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Classification',
+                  ),
+                  items: ['General', 'Goal Related', 'Debt Related']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedFixedExpenseSubCategory = val);
+                    }
+                  },
+                )
+              else
+                TextField(
+                  controller: _subCategoryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Sub Category (Optional)',
+                    hintText: 'e.g. Shopping',
+                  ),
                 ),
-              ),
               const SizedBox(height: 32),
 
               // Color Picker

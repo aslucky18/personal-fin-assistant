@@ -78,6 +78,9 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
             userId: '',
             name: suggestion['name']!,
             type: type,
+            subCategory:
+                suggestion['sub_category'] ??
+                (type == 'fixed_expense' ? 'General' : null),
             icon: suggestion['icon']!,
             colour: suggestion['color']!,
             createdAt: DateTime.now(),
@@ -113,6 +116,7 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
     String selectedIcon = suggestion?['icon'] ?? 'category';
     String selectedColor =
         suggestion?['color'] ?? IconColorMapper.premiumColors.first;
+    String selectedClassification = suggestion?['sub_category'] ?? 'General';
 
     final result = await showDialog<Map<String, String>>(
       context: context,
@@ -152,6 +156,31 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 24),
+
+                if (type == 'fixed_expense') ...[
+                  const Text(
+                    'Classification',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedClassification,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    items: ['General', 'Goal Related', 'Debt Related']
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedClassification = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
                 const Text(
                   'Icon',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -256,11 +285,15 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.trim().isNotEmpty) {
-                  Navigator.pop(context, {
+                  final data = {
                     'name': nameController.text.trim(),
                     'icon': selectedIcon,
                     'color': selectedColor,
-                  });
+                  };
+                  if (type == 'fixed_expense') {
+                    data['sub_category'] = selectedClassification;
+                  }
+                  Navigator.pop(context, data);
                 }
               },
               child: Text(isEditing ? 'Save' : 'Add'),
@@ -278,6 +311,42 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
           _suggestedCategories[type]!.add(result);
           _selectedIndices[type]!.add(_suggestedCategories[type]!.length - 1);
         }
+      });
+    }
+  }
+
+  Future<void> _showDeleteConfirmation(String type, int index) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Category'),
+        content: const Text('Are you sure you want to delete this category?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _suggestedCategories[type]!.removeAt(index);
+        final newSelected = <int>{};
+        for (int i in _selectedIndices[type]!) {
+          if (i < index) {
+            newSelected.add(i);
+          } else if (i > index) {
+            newSelected.add(i - 1);
+          }
+        }
+        _selectedIndices[type] = newSelected;
       });
     }
   }
@@ -361,43 +430,50 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
             final color = IconColorMapper.hexToColor(suggestion['color']!);
 
             return IntrinsicWidth(
-              child: FilterChip(
-                label: Text(suggestion['name']!),
-                selected: isSelected,
-                onSelected: (val) {
-                  setState(() {
-                    if (val) {
-                      selected.add(index);
-                    } else {
-                      if (selected.length > 1) selected.remove(index);
-                    }
-                  });
-                },
-                avatar: Icon(
-                  IconColorMapper.stringToIcon(suggestion['icon']!),
-                  size: 18,
-                  color: isSelected ? color : Colors.grey.shade600,
-                ),
-                onDeleted: isSelected
-                    ? () => _showCategoryEditor(type, index: index)
+              child: GestureDetector(
+                onLongPress: isSelected
+                    ? () => _showDeleteConfirmation(type, index)
                     : null,
-                deleteIcon: const Icon(Icons.edit, size: 14),
-                deleteButtonTooltipMessage: 'Edit category',
-                selectedColor: color.withAlpha(40),
-                checkmarkColor: color,
-                labelStyle: TextStyle(
-                  color: isSelected ? color : Colors.black87,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: isSelected ? color : Colors.grey.shade300,
-                    width: isSelected ? 2 : 1,
+                child: FilterChip(
+                  label: Text(suggestion['name']!),
+                  selected: isSelected,
+                  onSelected: (val) {
+                    setState(() {
+                      if (val) {
+                        selected.add(index);
+                      } else {
+                        if (selected.length > 1) selected.remove(index);
+                      }
+                    });
+                  },
+                  avatar: Icon(
+                    IconColorMapper.stringToIcon(suggestion['icon']!),
+                    size: 18,
+                    color: isSelected ? color : Colors.grey.shade600,
+                  ),
+                  onDeleted: isSelected
+                      ? () => _showCategoryEditor(type, index: index)
+                      : null,
+                  deleteIcon: const Icon(Icons.edit, size: 14),
+                  deleteButtonTooltipMessage: 'Edit category',
+                  selectedColor: color.withAlpha(40),
+                  checkmarkColor: color,
+                  labelStyle: TextStyle(
+                    color: isSelected ? color : Colors.black87,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isSelected ? color : Colors.grey.shade300,
+                      width: isSelected ? 2 : 1,
+                    ),
                   ),
                 ),
               ),
