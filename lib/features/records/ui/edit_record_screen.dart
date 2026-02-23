@@ -165,6 +165,54 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
         } catch (_) {}
       }
 
+      // Handle liability updates
+      if (widget.record.liabilityId != _selectedLiabilityId) {
+        // Liability changed
+        if (widget.record.liabilityId != null) {
+          try {
+            final oldLiability = _liabilities.firstWhere(
+              (l) => l.id == widget.record.liabilityId,
+            );
+            final revertedLiability = oldLiability.copyWith(
+              paidAmount: oldLiability.paidAmount - widget.record.amount,
+              paidMonths:
+                  oldLiability.type == 'EMI' && oldLiability.paidMonths > 0
+                  ? oldLiability.paidMonths - 1
+                  : oldLiability.paidMonths,
+            );
+            await _liabilityService.updateLiability(revertedLiability);
+          } catch (_) {}
+        }
+
+        if (_selectedLiabilityId != null) {
+          try {
+            final newLiability = _liabilities.firstWhere(
+              (l) => l.id == _selectedLiabilityId,
+            );
+            final updatedNewLiability = newLiability.copyWith(
+              paidAmount: newLiability.paidAmount + amount,
+              paidMonths: newLiability.type == 'EMI'
+                  ? newLiability.paidMonths + 1
+                  : newLiability.paidMonths,
+            );
+            await _liabilityService.updateLiability(updatedNewLiability);
+          } catch (_) {}
+        }
+      } else if (_selectedLiabilityId != null &&
+          widget.record.amount != amount) {
+        // Same liability, different amount (Keep months untouched, only adjust amount delta)
+        try {
+          final liability = _liabilities.firstWhere(
+            (l) => l.id == _selectedLiabilityId,
+          );
+          final delta = amount - widget.record.amount;
+          final updatedLiability = liability.copyWith(
+            paidAmount: liability.paidAmount + delta,
+          );
+          await _liabilityService.updateLiability(updatedLiability);
+        } catch (_) {}
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -213,6 +261,21 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
             currentAmount: goal.currentAmount - widget.record.amount,
           );
           await _goalService.updateGoal(updatedGoal);
+        } catch (_) {}
+      }
+
+      if (widget.record.liabilityId != null) {
+        try {
+          final liability = _liabilities.firstWhere(
+            (l) => l.id == widget.record.liabilityId,
+          );
+          final updatedLiability = liability.copyWith(
+            paidAmount: liability.paidAmount - widget.record.amount,
+            paidMonths: liability.type == 'EMI' && liability.paidMonths > 0
+                ? liability.paidMonths - 1
+                : liability.paidMonths,
+          );
+          await _liabilityService.updateLiability(updatedLiability);
         } catch (_) {}
       }
 
@@ -590,6 +653,17 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           setState(() {
             _selectedLiabilityId = val;
             _selectedGoalId = null;
+
+            // Only autofill if they changed to a different liability
+            if (val != null && val != widget.record.liabilityId) {
+              final liability = _liabilities.firstWhere((l) => l.id == val);
+              if (liability.monthlyPayable > 0) {
+                _amountController.text =
+                    liability.monthlyPayable == liability.monthlyPayable.toInt()
+                    ? liability.monthlyPayable.toInt().toString()
+                    : liability.monthlyPayable.toString();
+              }
+            }
           });
         },
       );

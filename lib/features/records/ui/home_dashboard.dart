@@ -650,74 +650,88 @@ class _HomeDashboardState extends State<HomeDashboard> {
       return _buildEmptySection('No goals set yet', Icons.flag_outlined);
     }
 
-    final topGoal = _goals.first;
-    final color = Color(int.parse(topGoal.colour.replaceFirst('#', '0xFF')));
+    final displayGoals = _goals.take(3).toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withAlpha(30),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(Icons.flag_rounded, color: color),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: displayGoals.map((goal) {
+        final color = Color(int.parse(goal.colour.replaceFirst('#', '0xFF')));
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      topGoal.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(30),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${(topGoal.percentComplete * 100).toStringAsFixed(0)}% Completed',
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withAlpha(150),
-                        fontSize: 14,
-                      ),
+                    child: Icon(Icons.flag_rounded, color: color, size: 20),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${goal.currentAmount.toStringAsFixed(0)} / \$${goal.targetAmount.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withAlpha(150),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                  Text(
+                    '${(goal.percentComplete * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: goal.percentComplete,
+                  backgroundColor: color.withAlpha(30),
+                  color: color,
+                  minHeight: 8,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: topGoal.percentComplete,
-              backgroundColor: color.withAlpha(30),
-              color: color,
-              minHeight: 12,
-            ),
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -726,66 +740,96 @@ class _HomeDashboardState extends State<HomeDashboard> {
       return _buildEmptySection('You are debt-free!', Icons.money_off_rounded);
     }
 
-    final totalDebt = _liabilities.fold<double>(
-      0,
-      (sum, item) => sum + item.remainingAmount,
-    );
+    final displayLiabilities = _liabilities.take(3).toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.error,
-            Theme.of(context).colorScheme.error.withAlpha(204),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.error.withAlpha(60),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: displayLiabilities.map((liability) {
+        final progress = liability.totalAmount > 0
+            ? (liability.paidAmount / liability.totalAmount).clamp(0.0, 1.0)
+            : 0.0;
+        final color = Theme.of(context).colorScheme.error;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(50),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.account_balance_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Column(
+          padding: const EdgeInsets.all(20),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Total Remaining Debt',
-                style: TextStyle(fontSize: 14, color: Colors.white70),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(20),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.account_balance_rounded,
+                      color: color,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          liability.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${liability.remainingAmount.toStringAsFixed(0)} left',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withAlpha(150),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '\$${totalDebt.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: color.withAlpha(20),
+                  color: color,
+                  minHeight: 8,
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -925,124 +969,153 @@ class _HomeDashboardState extends State<HomeDashboard> {
       );
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _records.length > 5 ? 5 : _records.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final tx = _records[index];
-        final isExpense = tx.type == 'debit';
-        final category = _categoryMap[tx.categoryId];
+    final displayRecords = _records.take(5).toList();
 
-        final color = category != null
-            ? IconColorMapper.hexToColor(category.colour)
-            : Theme.of(context).colorScheme.secondary;
-        final icon = category != null
-            ? IconColorMapper.stringToIcon(category.icon)
-            : Icons.category_rounded;
+    // Group records by date string
+    final groupedRecords = <String, List<FinancialRecord>>{};
+    for (var tx in displayRecords) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final recordDate = DateTime(
+        tx.timestamp.year,
+        tx.timestamp.month,
+        tx.timestamp.day,
+      );
 
-        final amountString = isExpense
-            ? '- \$${tx.amount.toStringAsFixed(2)}'
-            : '+ \$${tx.amount.toStringAsFixed(2)}';
+      String dateLabel;
+      if (recordDate == today) {
+        dateLabel = 'Today';
+      } else if (recordDate == yesterday) {
+        dateLabel = 'Yesterday';
+      } else {
+        dateLabel =
+            '${tx.timestamp.day}/${tx.timestamp.month}/${tx.timestamp.year}';
+      }
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(5),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+      groupedRecords.putIfAbsent(dateLabel, () => []).add(tx);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: groupedRecords.entries.map((entry) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8, top: 8),
+              child: Text(
+                entry.key,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
+                  fontSize: 14,
+                ),
               ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EditRecordScreen(record: tx),
-                  ),
-                );
-                if (result == true) {
-                  _loadData();
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: color.withAlpha(30),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(icon, color: color, size: 24),
+            ),
+            ...entry.value.map((tx) {
+              final isExpense = tx.type == 'debit';
+              final category = _categoryMap[tx.categoryId];
+
+              final color = category != null
+                  ? IconColorMapper.hexToColor(category.colour)
+                  : Theme.of(context).colorScheme.secondary;
+              final icon = category != null
+                  ? IconColorMapper.stringToIcon(category.icon)
+                  : Icons.category_rounded;
+
+              final amountString = isExpense
+                  ? '- \$${tx.amount.toStringAsFixed(2)}'
+                  : '+ \$${tx.amount.toStringAsFixed(2)}';
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(5),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditRecordScreen(record: tx),
+                        ),
+                      );
+                      if (result == true) {
+                        _loadData();
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(
-                            tx.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 16,
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(30),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(icon, color: color, size: 24),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tx.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  category?.name ?? 'Unknown',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withAlpha(150),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 4),
                           Text(
-                            category?.name ?? 'Unknown',
+                            amountString,
                             style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withAlpha(150),
-                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: isExpense
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : Colors.green.shade600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          amountString,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: isExpense
-                                ? Theme.of(context).colorScheme.onSurface
-                                : Colors.green.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${tx.timestamp.day}/${tx.timestamp.month}/${tx.timestamp.year}',
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withAlpha(150),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
+              );
+            }),
+          ],
         );
-      },
+      }).toList(),
     );
   }
 

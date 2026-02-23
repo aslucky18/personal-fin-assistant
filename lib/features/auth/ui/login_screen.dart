@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/responsive.dart';
 import '../services/auth_service.dart';
@@ -58,16 +59,25 @@ class _LoginScreenState extends State<LoginScreen> {
         if (user != null && user.userMetadata != null) {
           final googleAvatar = user.userMetadata!['avatar_url'] as String?;
           if (googleAvatar != null && googleAvatar.isNotEmpty) {
-            // Update silently
-            await _authService.updateProfile(avatarUrl: googleAvatar);
+            // Update silently and get updated profile so we can pass it down
+            profile = await _authService.updateProfile(avatarUrl: googleAvatar);
           }
         }
       }
 
       if (!mounted) return;
 
+      final prefs = await SharedPreferences.getInstance();
+      final hasCompletedLocal =
+          prefs.getBool('onboarding_completed_${profile.id}') ?? false;
+
+      bool isProfileSetup =
+          profile.gender != null ||
+          profile.jobTitle != null ||
+          profile.professionalSalary > 0;
+
       // Route to correct screen
-      if (profile.completeness > 0) {
+      if (hasCompletedLocal || isProfileSetup) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeDashboard()),
         );
@@ -75,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // First-time Google user → profile setup
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => SetupProfileScreen(profile: profile),
+            builder: (_) => SetupProfileScreen(profile: profile!),
           ),
         );
       }

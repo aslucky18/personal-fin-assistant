@@ -11,6 +11,8 @@ class Liability {
   final String? categoryId;
   final double monthlyPayable;
   final int noOfMonths;
+  final int paidMonths;
+  final double downPayment;
   final DateTime? startDate;
 
   Liability({
@@ -26,6 +28,8 @@ class Liability {
     this.categoryId,
     this.monthlyPayable = 0.0,
     this.noOfMonths = 0,
+    this.paidMonths = 0,
+    this.downPayment = 0.0,
     this.startDate,
   });
 
@@ -45,6 +49,8 @@ class Liability {
       categoryId: json['category_id'] as String?,
       monthlyPayable: (json['monthly_payable'] as num?)?.toDouble() ?? 0.0,
       noOfMonths: json['no_of_months'] as int? ?? 0,
+      paidMonths: json['paid_months'] as int? ?? 0,
+      downPayment: (json['down_payment'] as num?)?.toDouble() ?? 0.0,
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'] as String)
           : null,
@@ -62,10 +68,60 @@ class Liability {
       'category_id': categoryId,
       'monthly_payable': monthlyPayable,
       'no_of_months': noOfMonths,
+      'paid_months': paidMonths,
+      'down_payment': downPayment,
       'start_date': startDate?.toIso8601String(),
     };
   }
 
   double get remainingAmount => totalAmount - paidAmount;
   double get percentPaid => totalAmount > 0 ? (paidAmount / totalAmount) : 0;
+
+  Liability copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    double? totalAmount,
+    double? paidAmount,
+    double? interestRate,
+    DateTime? dueDate,
+    String? type,
+    DateTime? createdAt,
+    String? categoryId,
+    double? monthlyPayable,
+    int? noOfMonths,
+    int? paidMonths,
+    double? downPayment,
+    DateTime? startDate,
+  }) {
+    return Liability(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      totalAmount: totalAmount ?? this.totalAmount,
+      paidAmount: paidAmount ?? this.paidAmount,
+      interestRate: interestRate ?? this.interestRate,
+      dueDate: dueDate ?? this.dueDate,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      categoryId: categoryId ?? this.categoryId,
+      monthlyPayable: monthlyPayable ?? this.monthlyPayable,
+      noOfMonths: noOfMonths ?? this.noOfMonths,
+      paidMonths: paidMonths ?? this.paidMonths,
+      downPayment: downPayment ?? this.downPayment,
+      startDate: startDate ?? this.startDate,
+    );
+  }
+
+  double get monthsPercentPaid =>
+      noOfMonths > 0 ? (paidMonths / noOfMonths) : 0;
+
+  DateTime? get expectedCompletionDate {
+    if (startDate == null || noOfMonths <= 0) return null;
+    return DateTime(
+      startDate!.year,
+      startDate!.month + noOfMonths,
+      startDate!.day,
+    );
+  }
 }

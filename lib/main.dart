@@ -90,9 +90,10 @@ class MyApp extends StatelessWidget {
               .eq('id', userId)
               .single();
 
-          // Completeness > 0 means the profile has been set up at least partially
+          // Profile completeness check strictly for fields the user sets intentionally in onboarding
           final bool isComplete =
-              (profileData['full_name'] != null) ||
+              (profileData['gender'] != null) ||
+              (profileData['job_title'] != null) ||
               (profileData['professional_salary'] != null &&
                   profileData['professional_salary'] > 0);
 

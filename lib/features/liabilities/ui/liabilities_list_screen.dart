@@ -229,6 +229,15 @@ class _LiabilitiesListScreenState extends State<LiabilitiesListScreen> {
                               color: Colors.green,
                             ),
                           ),
+                          if (liability.noOfMonths > 0)
+                            Text(
+                              '${liability.paidMonths}/${liability.noOfMonths} Months',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
                           if (liability.interestRate > 0)
                             Text(
                               '${liability.interestRate}% Int.',
@@ -244,12 +253,28 @@ class _LiabilitiesListScreenState extends State<LiabilitiesListScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  LinearProgressIndicator(
-                    value: percent,
-                    backgroundColor: Colors.green.withAlpha(50),
-                    color: Colors.green,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
+                  Stack(
+                    children: [
+                      LinearProgressIndicator(
+                        value: percent,
+                        backgroundColor: Colors.green.withAlpha(30),
+                        color: Colors.green.withAlpha(
+                          150,
+                        ), // Financial progress darker
+                        minHeight: 12,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      if (liability.noOfMonths > 0)
+                        LinearProgressIndicator(
+                          value: liability.monthsPercentPaid,
+                          backgroundColor: Colors.transparent,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withAlpha(200), // Time progress
+                          minHeight: 12,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -277,6 +302,29 @@ class _LiabilitiesListScreenState extends State<LiabilitiesListScreen> {
                           ),
                         ],
                       ),
+                      if (liability.expectedCompletionDate != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${_getMonthName(liability.expectedCompletionDate!.month)} ${liability.expectedCompletionDate!.year}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              'Est. Completion',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withAlpha(150),
+                              ),
+                            ),
+                          ],
+                        ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -304,5 +352,23 @@ class _LiabilitiesListScreenState extends State<LiabilitiesListScreen> {
         );
       },
     );
+  }
+
+  String _getMonthName(int month) {
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return monthNames[month - 1];
   }
 }

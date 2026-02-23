@@ -131,6 +131,21 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         } catch (_) {}
       }
 
+      if (_selectedLiabilityId != null) {
+        try {
+          final liability = _liabilities.firstWhere(
+            (l) => l.id == _selectedLiabilityId,
+          );
+          final updatedLiability = liability.copyWith(
+            paidAmount: liability.paidAmount + amount,
+            paidMonths: liability.type == 'EMI'
+                ? liability.paidMonths + 1
+                : liability.paidMonths,
+          );
+          await _liabilityService.updateLiability(updatedLiability);
+        } catch (_) {}
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -540,6 +555,16 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           setState(() {
             _selectedLiabilityId = val;
             _selectedGoalId = null;
+
+            if (val != null) {
+              final liability = _liabilities.firstWhere((l) => l.id == val);
+              if (liability.monthlyPayable > 0) {
+                _amountController.text =
+                    liability.monthlyPayable == liability.monthlyPayable.toInt()
+                    ? liability.monthlyPayable.toInt().toString()
+                    : liability.monthlyPayable.toString();
+              }
+            }
           });
         },
       );

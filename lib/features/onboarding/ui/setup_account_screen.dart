@@ -127,19 +127,57 @@ class _SetupAccountScreenState extends State<SetupAccountScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'onboarding_accounts_fab',
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddAccountScreen()),
-          );
-          if (result == true) {
-            _loadAccounts();
-          }
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Account'),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_accounts.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddAccountScreen(),
+                      ),
+                    );
+                    if (result == true) {
+                      _loadAccounts();
+                    }
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add Another Account'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              if (_accounts.isNotEmpty) const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _accounts.isEmpty || _isConverting
+                    ? null
+                    : _completeSetup,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _isConverting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Complete Setup'),
+              ),
+            ],
+          ),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -183,27 +221,6 @@ class _SetupAccountScreenState extends State<SetupAccountScreen> {
                         },
                       ),
                     ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: ElevatedButton(
-                onPressed: _accounts.isEmpty || _isConverting
-                    ? null
-                    : _completeSetup,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isConverting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Complete Setup'),
-              ),
             ),
           ],
         ),
