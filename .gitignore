@@ -46,3 +46,5 @@ app.*.map.json
 
 # Secrets
 lib/secrets.dart
+Automation.md
+Production Checklist

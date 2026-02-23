@@ -9,6 +9,9 @@ class Liability {
   final String type;
   final DateTime createdAt;
   final String? categoryId;
+  final double monthlyPayable;
+  final int noOfMonths;
+  final DateTime? startDate;
 
   Liability({
     required this.id,
@@ -21,6 +24,9 @@ class Liability {
     required this.type,
     required this.createdAt,
     this.categoryId,
+    this.monthlyPayable = 0.0,
+    this.noOfMonths = 0,
+    this.startDate,
   });
 
   factory Liability.fromJson(Map<String, dynamic> json) {
@@ -37,6 +43,11 @@ class Liability {
       type: json['type'] as String? ?? 'loan',
       createdAt: DateTime.parse(json['created_at'] as String),
       categoryId: json['category_id'] as String?,
+      monthlyPayable: (json['monthly_payable'] as num?)?.toDouble() ?? 0.0,
+      noOfMonths: json['no_of_months'] as int? ?? 0,
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'] as String)
+          : null,
     );
   }
 
@@ -49,6 +60,9 @@ class Liability {
       'due_date': dueDate?.toIso8601String(),
       'type': type,
       'category_id': categoryId,
+      'monthly_payable': monthlyPayable,
+      'no_of_months': noOfMonths,
+      'start_date': startDate?.toIso8601String(),
     };
   }
 

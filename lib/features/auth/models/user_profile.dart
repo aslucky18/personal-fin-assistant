@@ -15,6 +15,9 @@ class UserProfile {
   final String? jobTitle;
   final String? companyName;
   final String? professionType; // 'White Collar' or 'Labor'
+  final bool mustChangePassword;
+  final DateTime? tempPwdExpiresAt;
+  final DateTime? accountLockedUntil;
 
   UserProfile({
     required this.id,
@@ -29,6 +32,9 @@ class UserProfile {
     this.jobTitle,
     this.companyName,
     this.professionType,
+    this.mustChangePassword = false,
+    this.tempPwdExpiresAt,
+    this.accountLockedUntil,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -48,6 +54,13 @@ class UserProfile {
       jobTitle: json['job_title'] as String?,
       companyName: json['company_name'] as String?,
       professionType: json['profession_type'] as String?,
+      mustChangePassword: (json['must_change_password'] as bool?) ?? false,
+      tempPwdExpiresAt: json['temp_pwd_expires_at'] != null
+          ? DateTime.parse(json['temp_pwd_expires_at'] as String)
+          : null,
+      accountLockedUntil: json['account_locked_until'] != null
+          ? DateTime.parse(json['account_locked_until'] as String)
+          : null,
     );
   }
 
@@ -65,6 +78,7 @@ class UserProfile {
       'job_title': jobTitle,
       'company_name': companyName,
       'profession_type': professionType,
+      'must_change_password': mustChangePassword,
     };
   }
 

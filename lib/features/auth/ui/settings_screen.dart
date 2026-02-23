@@ -47,158 +47,225 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              children: [
-                // Profile Section
-                Center(
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          if (_profile != null) {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    UserProfileScreen(profile: _profile!),
-                              ),
-                            );
-                            if (result == true) {
-                              _loadProfile();
+          : RefreshIndicator(
+              onRefresh: _loadProfile,
+              child: ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
+                children: [
+                  // Profile Section
+                  Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            if (_profile != null) {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      UserProfileScreen(profile: _profile!),
+                                ),
+                              );
+                              if (result == true) {
+                                _loadProfile();
+                              }
                             }
-                          }
-                        },
-                        child: CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          backgroundImage: _profile?.avatarUrl != null
-                              ? NetworkImage(_profile!.avatarUrl!)
-                              : null,
-                          child: _profile?.avatarUrl == null
-                              ? Text(
-                                  _profile?.fullName != null &&
-                                          _profile!.fullName!.isNotEmpty
-                                      ? _profile!.fullName![0].toUpperCase()
-                                      : 'U',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
+                          },
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            backgroundImage: _profile?.avatarUrl != null
+                                ? NetworkImage(_profile!.avatarUrl!)
+                                : null,
+                            child: _profile?.avatarUrl == null
+                                ? Text(
+                                    _profile?.fullName != null &&
+                                            _profile!.fullName!.isNotEmpty
+                                        ? _profile!.fullName![0].toUpperCase()
+                                        : 'U',
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _profile?.fullName ?? 'User',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-
-                // Options
-                ListTile(
-                  leading: Icon(
-                    Icons.color_lens_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  title: const Text('Theme'),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  onTap: () {
-                    _showThemePicker(context);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(
-                    Icons.security_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  title: const Text('Security & Privacy'),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  onTap: () {},
-                ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(
-                    Icons.help_outline_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  title: const Text('Help & Support'),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withAlpha(180) ??
-                        Colors.grey,
-                  ),
-                  onTap: () {},
-                ),
-                const Divider(),
-                const SizedBox(height: 24),
-
-                ListTile(
-                  leading: Icon(
-                    Icons.logout_rounded,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  title: Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontWeight: FontWeight.bold,
+                        const SizedBox(height: 16),
+                        Text(
+                          _profile?.fullName ?? 'User',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 32),
+                      ],
                     ),
                   ),
-                  onTap: () async {
-                    // Sign out logic.
-                    // We could navigate back to Login manually, but Supabase auth state change will be picked up
-                    // if we listen to it in main.dart or a wrapper.
-                    // But for now we just signOut and then pop to root and replace with auth screen.
-                    await authService.signOut();
-                    if (context.mounted) {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
+
+                  // Options
+                  ListTile(
+                    leading: Icon(
+                      Icons.color_lens_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    title: const Text('Theme'),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    onTap: () {
+                      _showThemePicker(context);
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(
+                      Icons.security_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    title: const Text('Security & Privacy'),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    onTap: () {},
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(
+                      Icons.help_outline_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    title: const Text('Help & Support'),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withAlpha(180) ??
+                          Colors.grey,
+                    ),
+                    onTap: () {},
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 24),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.logout_rounded,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    title: Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: () async {
+                      await authService.signOut();
+                      if (context.mounted) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: Colors.red,
+                    ),
+                    title: const Text(
+                      'Delete Account',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Permanently delete your account and all data',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete Account'),
+                          content: const Text(
+                            'This will permanently delete your account and all associated data. This action cannot be undone.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete Forever'),
+                            ),
+                          ],
+                        ),
                       );
-                    }
-                  },
-                ),
-              ],
+                      if (confirm == true && context.mounted) {
+                        try {
+                          await authService.deleteUserAccount();
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to delete account: $e'),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
     );
   }

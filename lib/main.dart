@@ -58,11 +58,10 @@ class MyApp extends StatelessWidget {
             if (onboardingCompleted) {
               return const HomeDashboard();
             } else {
-              // Should theoretically go to SetupProfile if session exists but onboarding is incomplete.
-              // We'll let LoginScreen handle this redirect if needed, or we can just send them to login.
-              // To be safe and let them resume, send to LoginScreen and it will handle the redirect.
-              // Or better, since we know they are logged in, we could send them directly to SetupProfileScreen.
-              // But for simplicity of this FutureBuilder, if onboarding is incomplete, LoginScreen will handle it.
+              // Make sure to pass a profile here or somehow redirect to login
+              // If we know onboarding is incomplete, LoginScreen will handle it
+              // in it's own flow when user logs in, but here we can just go to login
+              // to be safe if local state says not completed.
               return const LoginScreen();
             }
           }
@@ -77,9 +76,34 @@ class MyApp extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final introSeen = prefs.getBool('intro_seen') ?? false;
     bool onboardingCompleted = false;
+
     if (userId != null) {
       onboardingCompleted =
           prefs.getBool('onboarding_completed_$userId') ?? false;
+
+      // Ensure verification via backend
+      if (!onboardingCompleted) {
+        try {
+          final profileData = await Supabase.instance.client
+              .from('user_profiles')
+              .select()
+              .eq('id', userId)
+              .single();
+
+          // Completeness > 0 means the profile has been set up at least partially
+          final bool isComplete =
+              (profileData['full_name'] != null) ||
+              (profileData['professional_salary'] != null &&
+                  profileData['professional_salary'] > 0);
+
+          if (isComplete) {
+            onboardingCompleted = true;
+            await prefs.setBool('onboarding_completed_$userId', true);
+          }
+        } catch (_) {
+          // If query fails, stick with local state
+        }
+      }
     }
     return {
       'intro_seen': introSeen,
