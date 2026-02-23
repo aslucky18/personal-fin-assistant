@@ -14,10 +14,13 @@ class CategoriesListScreen extends StatefulWidget {
   State<CategoriesListScreen> createState() => _CategoriesListScreenState();
 }
 
-class _CategoriesListScreenState extends State<CategoriesListScreen> {
+class _CategoriesListScreenState extends State<CategoriesListScreen>
+    with SingleTickerProviderStateMixin {
   final _categoryService = CategoryService();
   List<Category> _categories = [];
   bool _isLoading = true;
+  bool _demoPlayed = false;
+  late final SlidableController _slidableController;
 
   // Expanded states for each group
   final Map<String, bool> _expanded = {
@@ -30,6 +33,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
   @override
   void initState() {
     super.initState();
+    _slidableController = SlidableController(this);
     _loadCategories();
   }
 
@@ -50,41 +54,101 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+      if (_categories.isNotEmpty && !_demoPlayed) {
+        _demoPlayed = true;
+        _playDemoSlidable();
+      }
     }
   }
 
-  Future<void> _deleteCategory(String id) async {
-    final confirm = await showDialog<bool>(
+  String? get _firstCategoryId {
+    final groups = [
+      'fixed_income',
+      'fixed_expense',
+      'variable_income',
+      'variable_expense',
+    ];
+    for (var type in groups) {
+      final cats = _getGroup(type);
+      if (cats.isNotEmpty) return cats.first.id;
+    }
+    return null;
+  }
+
+  Future<void> _playDemoSlidable() async {
+    // Wait for screen to render
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    // Open start action pane (Edit)
+    await _slidableController.openStartActionPane(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    await _slidableController.close(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+
+    // Open end action pane (Delete)
+    await _slidableController.openEndActionPane(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    await _slidableController.close(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  Future<void> _deleteCategory(String id, String catName) async {
+    // Returns: null=cancel, false=category only, true=category+records
+    final deleteRecords = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Delete Category'),
-        content: const Text(
-          'Are you sure you want to delete this category? This may affect records linked to it.',
+        content: Text(
+          'Do you also want to delete all transactions linked to "$catName"?\n\nThis cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Delete Category Only'),
+          ),
+          TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete + Records'),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
-      try {
+    if (deleteRecords == null) return;
+
+    try {
+      if (deleteRecords) {
+        await _categoryService.deleteCategoryWithRecords(id);
+      } else {
         await _categoryService.deleteCategory(id);
-        _loadCategories();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete category: $e')),
-          );
-        }
+      }
+      _loadCategories();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete category: $e')),
+        );
       }
     }
   }
@@ -353,10 +417,12 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
   Widget _buildCategoryTile(Category cat) {
     final color = IconColorMapper.hexToColor(cat.colour);
     final icon = IconColorMapper.stringToIcon(cat.icon);
+    final isFirst = cat.id == _firstCategoryId;
 
     return Slidable(
       key: ValueKey(cat.id),
-      endActionPane: ActionPane(
+      controller: isFirst ? _slidableController : null,
+      startActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
@@ -374,8 +440,13 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
             icon: Icons.edit_rounded,
             label: 'Edit',
           ),
+        ],
+      ),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
           SlidableAction(
-            onPressed: (_) => _deleteCategory(cat.id),
+            onPressed: (_) => _deleteCategory(cat.id, cat.name),
             backgroundColor: Colors.red.shade600,
             foregroundColor: Colors.white,
             icon: Icons.delete_rounded,

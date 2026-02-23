@@ -18,6 +18,8 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _monthlyPayableController;
   late final TextEditingController _noOfMonthsController;
+  late final TextEditingController _paidMonthsController;
+  late final TextEditingController _downPaymentController;
   String _selectedType = 'Loan';
   DateTime? _startDate;
 
@@ -51,6 +53,16 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
           ? widget.liability!.noOfMonths.toString()
           : '',
     );
+    _paidMonthsController = TextEditingController(
+      text: widget.liability != null && widget.liability!.paidMonths > 0
+          ? widget.liability!.paidMonths.toString()
+          : '',
+    );
+    _downPaymentController = TextEditingController(
+      text: widget.liability != null && widget.liability!.downPayment > 0
+          ? widget.liability!.downPayment.toString()
+          : '',
+    );
     _selectedType = widget.liability?.type ?? 'Loan';
     _startDate = widget.liability?.startDate ?? DateTime.now();
     _selectedCategoryId = widget.liability?.categoryId;
@@ -66,8 +78,7 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
               .where(
                 (c) =>
                     c.type == Category.fixedExpense &&
-                    c.name.trim().toLowerCase() != 'salary' &&
-                    c.name.trim().toLowerCase() != 'housing rent',
+                    c.subCategory == 'Debt Related',
               )
               .toList();
           _isLoadingCategories = false;
@@ -91,6 +102,8 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
     _nameController.dispose();
     _monthlyPayableController.dispose();
     _noOfMonthsController.dispose();
+    _paidMonthsController.dispose();
+    _downPaymentController.dispose();
     super.dispose();
   }
 
@@ -102,14 +115,27 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
       final monthlyPayable =
           double.tryParse(_monthlyPayableController.text) ?? 0.0;
       final noOfMonths = int.tryParse(_noOfMonthsController.text) ?? 0;
-      final totalAmount = monthlyPayable * noOfMonths;
+      final paidMonths = int.tryParse(_paidMonthsController.text) ?? 0;
+
+      final isEmi = _selectedType == 'EMI';
+      final downPayment = isEmi
+          ? (double.tryParse(_downPaymentController.text) ?? 0.0)
+          : 0.0;
+
+      final totalAmount = isEmi
+          ? downPayment + (monthlyPayable * noOfMonths)
+          : monthlyPayable * noOfMonths;
+
+      final paidAmount = isEmi
+          ? downPayment + (paidMonths * monthlyPayable)
+          : widget.liability?.paidAmount ?? 0.0;
 
       final liability = Liability(
         id: widget.liability?.id ?? '',
         userId: widget.liability?.userId ?? '',
         name: _nameController.text.trim(),
         totalAmount: totalAmount,
-        paidAmount: widget.liability?.paidAmount ?? 0.0,
+        paidAmount: paidAmount,
         interestRate: 0.0,
         dueDate: _startDate != null
             ? DateTime(
@@ -123,6 +149,8 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
         categoryId: _selectedCategoryId,
         monthlyPayable: monthlyPayable,
         noOfMonths: noOfMonths,
+        paidMonths: paidMonths,
+        downPayment: downPayment,
         startDate: _startDate,
       );
 
@@ -286,6 +314,28 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                 },
               ),
               const SizedBox(height: 24),
+              if (_selectedType == 'EMI') ...[
+                TextFormField(
+                  controller: _downPaymentController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Down Payment',
+                    prefixText: '\$ ',
+                    hintText: 'Initial payment amount',
+                  ),
+                  validator: (val) {
+                    if (val != null &&
+                        val.isNotEmpty &&
+                        double.tryParse(val) == null) {
+                      return 'Invalid amount';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -318,6 +368,33 @@ class _AddEditLiabilityScreenState extends State<AddEditLiabilityScreen> {
                           : null,
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _paidMonthsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'No. of Months Paid',
+                      ),
+                      validator: (val) {
+                        if (val == null || val.isEmpty) return null; // Optional
+                        if (int.tryParse(val) == null) return 'Invalid';
+                        final paid = int.tryParse(val)!;
+                        final total =
+                            int.tryParse(_noOfMonthsController.text) ?? 0;
+                        if (paid > total && total > 0) return 'Exceeds total';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: const SizedBox(),
+                  ), // Empty space for alignment
                 ],
               ),
               const SizedBox(height: 24),

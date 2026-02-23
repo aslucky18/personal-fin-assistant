@@ -37,6 +37,12 @@ class AccountService {
     await _supabase.from('user_personal_accounts').delete().eq('id', accountId);
   }
 
+  /// Deletes all financial records linked to [accountId], then deletes the account.
+  Future<void> deleteAccountWithRecords(String accountId) async {
+    await _supabase.from('records').delete().eq('account_id', accountId);
+    await _supabase.from('user_personal_accounts').delete().eq('id', accountId);
+  }
+
   // Update an account (using encrypting RPC)
   Future<Account> updateAccount(Account account) async {
     final response = await _supabase.rpc(

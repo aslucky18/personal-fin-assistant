@@ -12,9 +12,11 @@ class SetupCategoriesScreen extends StatefulWidget {
   State<SetupCategoriesScreen> createState() => _SetupCategoriesScreenState();
 }
 
-class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
+class _SetupCategoriesScreenState extends State<SetupCategoriesScreen>
+    with SingleTickerProviderStateMixin {
   final _categoryService = CategoryService();
   bool _isLoading = false;
+  late final SlidableController _slidableController;
 
   final Map<String, List<Map<String, String>>> _suggestedCategories = {
     'fixed_income': [],
@@ -41,7 +43,42 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
   @override
   void initState() {
     super.initState();
+    _slidableController = SlidableController(this);
     _loadSuggestions();
+    _playDemoSlidable();
+  }
+
+  Future<void> _playDemoSlidable() async {
+    // Wait for screen to render
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    // Open start action pane (Edit)
+    await _slidableController.openStartActionPane(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    await _slidableController.close(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+
+    // Open end action pane (Delete)
+    await _slidableController.openEndActionPane(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    await _slidableController.close(
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
   }
 
   void _loadSuggestions() {
@@ -99,7 +136,7 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
       }
 
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SetupAccountScreen()),
         );
@@ -383,8 +420,8 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
             const SizedBox(height: 32),
             _buildSectionHeader(
               'Fixed',
-              Icons.push_pin_rounded,
-              Theme.of(context).colorScheme.primary,
+              Icons.lock_rounded,
+              const Color(0xFF6366F1),
             ),
             const SizedBox(height: 8),
             _buildGroup(
@@ -576,25 +613,31 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
 
     return Slidable(
       key: ValueKey('${type}_$index'),
+      controller: index == 0 && type == 'fixed_income'
+          ? _slidableController
+          : null,
+      startActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (_) => _showCategoryEditor(type, index: index),
+            backgroundColor: Colors.blue.shade600,
+            foregroundColor: Colors.white,
+            icon: Icons.edit_rounded,
+            label: 'Edit',
+          ),
+        ],
+      ),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
-          if (isSelected)
-            SlidableAction(
-              onPressed: (_) => _showCategoryEditor(type, index: index),
-              backgroundColor: Colors.blue.shade600,
-              foregroundColor: Colors.white,
-              icon: Icons.edit_rounded,
-              label: 'Edit',
-            ),
-          if (isSelected)
-            SlidableAction(
-              onPressed: (_) => _showDeleteConfirmation(type, index),
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              icon: Icons.delete_rounded,
-              label: 'Delete',
-            ),
+          SlidableAction(
+            onPressed: (_) => _showDeleteConfirmation(type, index),
+            backgroundColor: Colors.red.shade600,
+            foregroundColor: Colors.white,
+            icon: Icons.delete_rounded,
+            label: 'Delete',
+          ),
         ],
       ),
       child: ListTile(
@@ -603,12 +646,16 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isSelected ? color : Colors.grey.shade200,
+            color: isSelected
+                ? color
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: isSelected ? Colors.white : Colors.grey.shade600,
+            color: isSelected
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             size: 20,
           ),
         ),
@@ -616,7 +663,7 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
           suggestion['name']!,
           style: TextStyle(
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? color : Colors.black87,
+            color: isSelected ? color : Theme.of(context).colorScheme.onSurface,
             fontSize: 14,
           ),
         ),
@@ -626,19 +673,13 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               )
             : null,
-        trailing: Checkbox(
-          value: isSelected,
-          activeColor: color,
-          onChanged: (val) {
-            setState(() {
-              if (val == true) {
-                selected.add(index);
-              } else {
-                if (selected.length > 1) selected.remove(index);
-              }
-            });
-          },
-        ),
+        trailing: !isSelected
+            ? Icon(
+                Icons.circle_outlined,
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(80),
+                size: 20,
+              )
+            : Icon(Icons.check_circle_rounded, color: color, size: 20),
         onTap: () {
           setState(() {
             if (!isSelected) {

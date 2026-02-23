@@ -36,6 +36,12 @@ class CategoryService {
     await _supabase.from('categories').delete().eq('id', categoryId);
   }
 
+  /// Deletes all financial records linked to [categoryId], then deletes the category.
+  Future<void> deleteCategoryWithRecords(String categoryId) async {
+    await _supabase.from('records').delete().eq('category_id', categoryId);
+    await _supabase.from('categories').delete().eq('id', categoryId);
+  }
+
   // Update a category
   Future<Category> updateCategory(Category category) async {
     final response = await _supabase

@@ -44,38 +44,47 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     }
   }
 
-  Future<void> _deleteAccount(String id) async {
-    final confirm = await showDialog<bool>(
+  Future<void> _deleteAccount(String id, String bankName) async {
+    // Returns: null=cancel, false=account only, true=account+records
+    final deleteRecords = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure you want to delete this account? Any transactions linked to this account might be affected.',
+        content: Text(
+          'Do you also want to delete all transactions linked to "$bankName"?\n\nThis cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Delete Account Only'),
+          ),
+          TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete + Records'),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
-      try {
+    if (deleteRecords == null) return; // cancelled
+
+    try {
+      if (deleteRecords) {
+        await _accountService.deleteAccountWithRecords(id);
+      } else {
         await _accountService.deleteAccount(id);
-        _loadAccounts();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete account: $e')),
-          );
-        }
+      }
+      _loadAccounts();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete account: $e')));
       }
     }
   }
@@ -227,7 +236,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
               _loadAccounts();
             }
           },
-          onLongPress: () => _deleteAccount(acc.id),
+          onLongPress: () => _deleteAccount(acc.id, acc.bankName),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(

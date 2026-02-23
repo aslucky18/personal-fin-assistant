@@ -113,7 +113,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SetupCategoriesScreen()),
         );
@@ -137,7 +137,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const SetupCategoriesScreen(),
@@ -315,11 +315,14 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             backgroundImage: _selectedImageBytes != null
                 ? MemoryImage(_selectedImageBytes!)
-                : (widget.profile.avatarUrl != null
+                : (widget.profile.avatarUrl != null &&
+                          widget.profile.avatarUrl!.isNotEmpty
                       ? NetworkImage(widget.profile.avatarUrl!) as ImageProvider
                       : null),
             child:
-                _selectedImageBytes == null && widget.profile.avatarUrl == null
+                _selectedImageBytes == null &&
+                    (widget.profile.avatarUrl == null ||
+                        widget.profile.avatarUrl!.isEmpty)
                 ? Icon(
                     Icons.person_outline_rounded,
                     size: 50,
