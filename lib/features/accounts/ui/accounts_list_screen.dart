@@ -4,6 +4,7 @@ import 'add_account_screen.dart';
 import '../services/account_service.dart';
 import '../models/account.dart';
 import '../../../core/utils/bank_branding.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AccountsListScreen extends StatefulWidget {
   const AccountsListScreen({super.key});
@@ -101,13 +102,13 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Account'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _accounts.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _loadAccounts,
-              child: ListView.separated(
+      body: RefreshIndicator(
+        onRefresh: _loadAccounts,
+        child: _isLoading
+            ? _buildShimmerLoading()
+            : _accounts.isEmpty
+            ? _buildEmptyState()
+            : ListView.separated(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 24,
@@ -119,7 +120,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   return _buildAccountCard(context, acc: acc);
                 },
               ),
-            ),
+      ),
     );
   }
 
@@ -162,6 +163,29 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView.separated(
+      // AlwaysScrollable so RefreshIndicator can detect the pull gesture
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      itemCount: 3,
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          highlightColor: Theme.of(context).colorScheme.surface,
+          child: Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+        );
+      },
     );
   }
 

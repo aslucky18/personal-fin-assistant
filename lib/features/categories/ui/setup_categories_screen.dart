@@ -30,6 +30,14 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
     'variable_expense': {},
   };
 
+  // Expanded states for each group
+  final Map<String, bool> _expanded = {
+    'fixed_income': true,
+    'variable_income': true,
+    'fixed_expense': true,
+    'variable_expense': true,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -373,10 +381,47 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            _buildCategoryGroup('Fixed Income', 'fixed_income'),
-            _buildCategoryGroup('Variable Income', 'variable_income'),
-            _buildCategoryGroup('Fixed Expense', 'fixed_expense'),
-            _buildCategoryGroup('Variable Expense', 'variable_expense'),
+            _buildSectionHeader(
+              'Fixed',
+              Icons.push_pin_rounded,
+              Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 8),
+            _buildGroup(
+              'Income',
+              'fixed_income',
+              Icons.arrow_upward_rounded,
+              Colors.green,
+            ),
+            const SizedBox(height: 4),
+            _buildGroup(
+              'Expense',
+              'fixed_expense',
+              Icons.arrow_downward_rounded,
+              Colors.red,
+            ),
+            const SizedBox(height: 20),
+
+            // VARIABLE Section
+            _buildSectionHeader(
+              'Variable',
+              Icons.sync_rounded,
+              const Color(0xFFF59E0B),
+            ),
+            const SizedBox(height: 8),
+            _buildGroup(
+              'Income',
+              'variable_income',
+              Icons.arrow_upward_rounded,
+              Colors.green,
+            ),
+            const SizedBox(height: 4),
+            _buildGroup(
+              'Expense',
+              'variable_expense',
+              Icons.arrow_downward_rounded,
+              Colors.red,
+            ),
             const SizedBox(height: 48),
             ElevatedButton(
               onPressed: _isLoading ? null : _createCategoriesAndNext,
@@ -400,131 +445,210 @@ class _SetupCategoriesScreenState extends State<SetupCategoriesScreen> {
     );
   }
 
-  Widget _buildCategoryGroup(String title, String type) {
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withAlpha(40), color.withAlpha(10)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withAlpha(60),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroup(
+    String title,
+    String type,
+    IconData incomeIcon,
+    Color incomeColor,
+  ) {
+    final suggestions = _suggestedCategories[type]!;
+    final isExpanded = _expanded[type] ?? true;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 12, right: 0, bottom: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: incomeColor.withAlpha(100), width: 3),
+        ),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: isExpanded,
+          onExpansionChanged: (val) => setState(() => _expanded[type] = val),
+          leading: Icon(incomeIcon, color: incomeColor, size: 20),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: incomeColor,
+              fontSize: 14,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: incomeColor.withAlpha(30),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${suggestions.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: incomeColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: () => _addCustomCategory(type),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.add_circle_outline,
+                    color: incomeColor,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: suggestions.isEmpty
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      'No $title categories yet. Tap + to add.',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ]
+              : List.generate(suggestions.length, (index) {
+                  return _buildCategoryTile(type, index);
+                }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTile(String type, int index) {
     final suggestions = _suggestedCategories[type]!;
     final selected = _selectedIndices[type]!;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            TextButton.icon(
-              onPressed: () => _addCustomCategory(type),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Custom'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: List.generate(suggestions.length, (index) {
-            final suggestion = suggestions[index];
-            final isSelected = selected.contains(index);
-            final color = IconColorMapper.hexToColor(suggestion['color']!);
+    final suggestion = suggestions[index];
+    final isSelected = selected.contains(index);
+    final color = IconColorMapper.hexToColor(suggestion['color']!);
+    final icon = IconColorMapper.stringToIcon(suggestion['icon']!);
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Slidable(
-                key: ValueKey('${type}_$index'),
-                endActionPane: ActionPane(
-                  motion: const ScrollMotion(),
-                  children: [
-                    if (isSelected)
-                      SlidableAction(
-                        onPressed: (_) =>
-                            _showCategoryEditor(type, index: index),
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        icon: Icons.edit,
-                        label: 'Edit',
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    if (isSelected)
-                      SlidableAction(
-                        onPressed: (_) => _showDeleteConfirmation(type, index),
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'Delete',
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                  ],
-                ),
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: isSelected ? color : Colors.grey.shade300,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  tileColor: isSelected ? color.withAlpha(20) : null,
-                  leading: CircleAvatar(
-                    backgroundColor: isSelected ? color : Colors.grey.shade200,
-                    foregroundColor: isSelected
-                        ? Colors.white
-                        : Colors.grey.shade600,
-                    child: Icon(
-                      IconColorMapper.stringToIcon(suggestion['icon']!),
-                    ),
-                  ),
-                  title: Text(
-                    suggestion['name']!,
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isSelected ? color : Colors.black87,
-                    ),
-                  ),
-                  subtitle:
-                      type == 'fixed_expense' &&
-                          suggestion['sub_category'] != null
-                      ? Text(
-                          suggestion['sub_category']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        )
-                      : null,
-                  trailing: Checkbox(
-                    value: isSelected,
-                    activeColor: color,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          selected.add(index);
-                        } else {
-                          if (selected.length > 1) selected.remove(index);
-                        }
-                      });
-                    },
-                  ),
-                  onTap: () {
-                    setState(() {
-                      if (!isSelected) {
-                        selected.add(index);
-                      } else {
-                        if (selected.length > 1) selected.remove(index);
-                      }
-                    });
-                  },
-                ),
-              ),
-            );
-          }),
+    return Slidable(
+      key: ValueKey('${type}_$index'),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          if (isSelected)
+            SlidableAction(
+              onPressed: (_) => _showCategoryEditor(type, index: index),
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+              icon: Icons.edit_rounded,
+              label: 'Edit',
+            ),
+          if (isSelected)
+            SlidableAction(
+              onPressed: (_) => _showDeleteConfirmation(type, index),
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+              icon: Icons.delete_rounded,
+              label: 'Delete',
+            ),
+        ],
+      ),
+      child: ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: isSelected ? Colors.white : Colors.grey.shade600,
+            size: 20,
+          ),
         ),
-        const SizedBox(height: 24),
-      ],
+        title: Text(
+          suggestion['name']!,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? color : Colors.black87,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: type == 'fixed_expense' && suggestion['sub_category'] != null
+            ? Text(
+                suggestion['sub_category']!,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              )
+            : null,
+        trailing: Checkbox(
+          value: isSelected,
+          activeColor: color,
+          onChanged: (val) {
+            setState(() {
+              if (val == true) {
+                selected.add(index);
+              } else {
+                if (selected.length > 1) selected.remove(index);
+              }
+            });
+          },
+        ),
+        onTap: () {
+          setState(() {
+            if (!isSelected) {
+              selected.add(index);
+            } else {
+              if (selected.length > 1) selected.remove(index);
+            }
+          });
+        },
+      ),
     );
   }
 }

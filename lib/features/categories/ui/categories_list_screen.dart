@@ -5,6 +5,7 @@ import 'add_category_screen.dart';
 import '../services/category_service.dart';
 import '../models/category.dart';
 import '../../../core/utils/icon_color_mapper.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CategoriesListScreen extends StatefulWidget {
   const CategoriesListScreen({super.key});
@@ -113,13 +114,13 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Category'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _categories.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _loadCategories,
-              child: ListView(
+      body: RefreshIndicator(
+        onRefresh: _loadCategories,
+        child: _isLoading
+            ? _buildShimmerLoading()
+            : _categories.isEmpty
+            ? _buildEmptyState()
+            : ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -171,7 +172,55 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                   const SizedBox(height: 80),
                 ],
               ),
-            ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView(
+      // AlwaysScrollable so RefreshIndicator can detect the pull gesture
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        _buildShimmerSectionHeader(),
+        const SizedBox(height: 8),
+        _buildShimmerGroup(),
+        const SizedBox(height: 12),
+        _buildShimmerGroup(),
+        const SizedBox(height: 24),
+        _buildShimmerSectionHeader(),
+        const SizedBox(height: 8),
+        _buildShimmerGroup(),
+      ],
+    );
+  }
+
+  Widget _buildShimmerSectionHeader() {
+    return Shimmer.fromColors(
+      baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      highlightColor: Theme.of(context).colorScheme.surface,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerGroup() {
+    return Shimmer.fromColors(
+      baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      highlightColor: Theme.of(context).colorScheme.surface,
+      child: Container(
+        margin: const EdgeInsets.only(left: 12, right: 0, bottom: 4),
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 

@@ -1,9 +1,39 @@
 import 'dart:typed_data';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  // ── Google Sign-In ──────────────────────────────────────────────────────────
+  // webClientId must match the OAuth 2.0 Web Client ID from Google Cloud Console
+  // (the same one configured in Supabase Auth → Providers → Google).
+  static const _webClientId =
+      '85774802539-sj626v93pqd67e6fvpht08v0s6pu0u8v.apps.googleusercontent.com';
+
+  Future<AuthResponse> signInWithGoogle() async {
+    // google_sign_in v7+ uses a singleton instance pattern
+    await GoogleSignIn.instance.initialize(serverClientId: _webClientId);
+
+    final googleUser = await GoogleSignIn.instance.authenticate();
+
+    // Get the ID token
+    final idToken = googleUser.authentication.idToken;
+    if (idToken == null) throw Exception('No ID token received from Google');
+
+    // Get the Access token (optional, but good for Supabase)
+    // We don't need any specific scopes so we don't need to ask for authorization.
+    final accessToken = null;
+
+    final response = await _supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: accessToken,
+    );
+
+    return response;
+  }
 
   // Sign up with email and password
   Future<AuthResponse> signUp({
