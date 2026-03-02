@@ -22,6 +22,8 @@ import '../../goals/models/goal.dart';
 import '../../liabilities/ui/liabilities_list_screen.dart';
 import '../../liabilities/services/liability_service.dart';
 import '../../liabilities/models/liability.dart';
+import '../../sms_automation/services/pending_transaction_service.dart';
+import '../../sms_automation/ui/pending_transactions_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -43,6 +45,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   UserProfile? _userProfile;
   List<FinancialGoal> _goals = [];
   List<Liability> _liabilities = [];
+  int _pendingTransactionCount = 0;
 
   bool _isLoading = true;
   double _totalBalance = 0;
@@ -53,6 +56,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
   void initState() {
     super.initState();
     _loadData();
+    _loadPendingCount();
+  }
+
+  Future<void> _loadPendingCount() async {
+    final count = await PendingTransactionService.instance.pendingCount();
+    if (mounted) setState(() => _pendingTransactionCount = count);
   }
 
   Future<void> _loadData() async {
@@ -235,11 +244,24 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: Colors.white,
+                          icon: Badge(
+                            label: Text('$_pendingTransactionCount'),
+                            isLabelVisible: _pendingTransactionCount > 0,
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: Colors.white,
+                            ),
                           ),
-                          onPressed: () {},
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const PendingTransactionsScreen(),
+                              ),
+                            );
+                            _loadPendingCount();
+                          },
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(

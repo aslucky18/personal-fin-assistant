@@ -6,6 +6,7 @@ import 'core/theme/theme_provider.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'features/records/ui/home_dashboard.dart';
 import 'features/onboarding/ui/onboarding_screen.dart';
+import 'features/sms_automation/services/sms_listener_service.dart';
 import 'secrets.dart';
 
 Future<void> main() async {
@@ -56,6 +57,11 @@ class MyApp extends StatelessWidget {
 
           if (session != null) {
             if (onboardingCompleted) {
+              // Initialize SMS listener for authenticated users (Android only)
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                await SmsListenerService.instance.initialize();
+                await SmsListenerService.instance.enrichPendingTransactions();
+              });
               return const HomeDashboard();
             } else {
               // Make sure to pass a profile here or somehow redirect to login

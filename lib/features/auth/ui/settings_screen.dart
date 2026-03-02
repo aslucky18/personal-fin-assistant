@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import 'privacy_policy_screen.dart';
 import 'support_screen.dart';
+import '../../sms_automation/ui/sms_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -176,6 +177,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const PrivacyPolicyScreen(),
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        _buildSettingsTile(
+                          icon: Icons.sms_outlined,
+                          title: 'SMS Automation',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SmsSettingsScreen(),
                             ),
                           ),
                         ),
