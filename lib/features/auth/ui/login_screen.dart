@@ -68,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
       final hasCompletedLocal =
           prefs.getBool('onboarding_completed_${profile.id}') ?? false;
 
